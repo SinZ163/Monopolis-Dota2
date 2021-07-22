@@ -1,0 +1,1 @@
+$.CreatePanel("Panel", $.GetContextPanel(), $.GetContextPanel().layoutfile).BLoadLayout("file://{resources}/layout/custom_game/worldpanels/space.xml", false, false);

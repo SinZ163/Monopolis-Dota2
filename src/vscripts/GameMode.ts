@@ -90,6 +90,14 @@ export class GameMode {
     public Reload() {
         print("Script reloaded!");
 
+        
+        let entities = Entities.FindAllByClassname("point_clientui_world_panel") as CPointClientUIWorldPanel[];
+        print("Number of world panels: ", entities.length);
+        for(let entity of entities) {
+            print(entity.GetName());
+            entity.AddCSSClasses(entity.GetName());
+        }
+
         // Do some stuff here
     }
 
