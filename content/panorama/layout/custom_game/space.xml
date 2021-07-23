@@ -1,0 +1,29 @@
+<root>
+    <scripts>
+        <!-- Included JS script files go here -->
+        <include src="file://{resources}/scripts/custom_game/hud.js" />
+    </scripts>
+
+    <styles>
+        <!-- Included css style files go here -->
+        <include src="s2r://panorama/styles/dotastyles.css" />
+        <include src="file://{resources}/styles/custom_game/hud.css" />
+    </styles>
+
+    <snippets>
+        <!-- Snippets go here -->
+    </snippets>
+
+    <ClientUIDialogPanel  hittest="false" class="MainSpace">
+        <Panel id="ExampleSpace">
+            <Panel id="HouseBox" />
+
+            <Label id="SpaceName" text="WHITECHAPEL ROAD" />
+
+            <Panel id="PriceContainer">
+                <Panel id="GoldIcon" />
+                <Label id="SpacePrice" text="420" />
+            </Panel>
+        </Panel>
+    </ClientUIDialogPanel>
+</root>

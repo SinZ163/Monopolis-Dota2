@@ -13,3 +13,50 @@ interface UnitData {
     name: string,
     level: number
 }
+
+type HouseTiles = 
+|    "brown1"
+|    "brown2"
+
+|    "teal1"
+|    "teal2"
+|    "teal3"
+
+|    "magenta1"
+|    "magenta2"
+|    "magenta3"
+
+|    "orange1"
+|    "orange2"
+|    "orange3"
+
+|    "red1"
+|    "red2"
+|    "red3"
+
+|    "yellow1"
+|    "yellow2"
+|    "yellow3"
+
+|    "green1"
+|    "green2"
+|    "green3"
+
+|    "blue1"
+|    "blue2";
+
+type PurchasableTiles = 
+|    HouseTiles
+
+|    "railroad1"
+|    "railroad2"
+|    "railroad3"
+|    "railroad4"
+
+|    "utility1"
+|    "utility2";
+
+type Tiles = 
+| PurchasableTiles
+|    "tax1"
+|    "tax2";

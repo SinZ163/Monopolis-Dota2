@@ -1,11 +1,11 @@
-.MainSpace {
+.MainSpace, .RailroadSpace {
     width: 100%;
     height: 100%;
 
     background-color: white;
 }
 
-.MainHud, .Tile {
+.MainHud, .Tile, .Chance, .CommunityChest {
     width: 100%;
     height: 100%;
 }
@@ -47,13 +47,34 @@
 
 
 
-.SpaceName {
-    font-size: 140;
+#SpaceName {
+    font-size: 120;
     text-align: center;
 
     width: 80%;
     horizontal-align: center;
     y: 500px;
+
+    text-transform: uppercase;
+}
+.ImageSpace #SpaceName,
+#Chance #SpaceName,
+#CommunityChest #SpaceName {
+    y: 100px;
+}
+
+#Image {
+    width: 700px;
+    height: 700px;
+
+    y: 600px;
+
+    horizontal-align: center;
+}
+
+#Chance #Image, #CommunityChest #Image {
+    width: 900px;
+    height: 900px;
 }
 
 #PriceContainer {
@@ -69,10 +90,24 @@
     height: 150px;
 }
 
-.SpacePrice {
+#SpacePrice {
     font-size: 140;
     text-align: center;
     margin-left: 160px;
+}
+
+.HasPayment #PriceContainer {
+    width: 70%;
+}
+.HasPayment #GoldIcon {
+    margin-left: 240px;
+}
+.HasPayment #SpacePrice {
+    margin-left: 380px;
+}
+#PaymentText {
+    font-size: 140;
+    text-align: center;
 }
 
 #ExamplePanel {
@@ -85,7 +120,7 @@
     vertical-align: center;
 }
 
-#ExampleSpace {
+#ExampleSpace, #CommunityChest, #Chance {
     width: 1000px;
     height: 1750px;
     /* Using a background image already in dota */

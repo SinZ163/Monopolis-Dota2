@@ -9,6 +9,49 @@ declare global {
     }
 }
 
+const MonopolisPrices: Record<Tiles, number> = {
+    "brown1": 60,
+    "brown2": 60,
+
+    "teal1": 100,
+    "teal2": 100,
+    "teal3": 120,
+
+    "magenta1": 140,
+    "magenta2": 140,
+    "magenta3": 160,
+
+    "orange1": 180,
+    "orange2": 180,
+    "orange3": 200,
+
+    "red1": 220,
+    "red2": 220,
+    "red3": 240,
+
+    "yellow1": 260,
+    "yellow2": 260,
+    "yellow3": 280,
+
+    "green1": 300,
+    "green2": 300,
+    "green3": 320,
+
+    "blue1": 350,
+    "blue2": 400,
+
+    "railroad1": 200,
+    "railroad2": 200,
+    "railroad3": 200,
+    "railroad4": 200,
+
+    "utility1": 150,
+    "utility2": 150,
+
+    "tax1": -200,
+    "tax2": -100
+}
+
 @reloadable
 export class GameMode {
     public static Precache(this: void, context: CScriptPrecacheContext) {
@@ -23,28 +66,6 @@ export class GameMode {
 
     constructor() {
         this.configure();
-
-        // Register event listeners for dota engine events
-        ListenToGameEvent("game_rules_state_change", () => this.OnStateChange(), undefined);
-        ListenToGameEvent("npc_spawned", event => this.OnNpcSpawned(event), undefined);
-
-        // Register event listeners for events from the UI
-        CustomGameEventManager.RegisterListener("ui_panel_closed", (_, data) => {
-            print(`Player ${data.PlayerID} has closed their UI panel.`);
-
-            // Respond by sending back an example event
-            const player = PlayerResource.GetPlayer(data.PlayerID)!;
-            CustomGameEventManager.Send_ServerToPlayer(player, "example_event", {
-                myNumber: 42,
-                myBoolean: true,
-                myString: "Hello!",
-                myArrayOfNumbers: [1.414, 2.718, 3.142]
-            });
-
-            // Also apply the panic modifier to the sending player's hero
-            const hero = player.GetAssignedHero();
-            hero.AddNewModifier(hero, undefined, modifier_panic.name, { duration: 5 });
-        });
     }
 
     private configure(): void {
@@ -77,6 +98,8 @@ export class GameMode {
         // Start game once pregame hits
         if (state === GameState.PRE_GAME) {
             Timers.CreateTimer(0.2, () => this.StartGame());
+
+            CustomGameEventManager.Send_ServerToAllClients("monopolis_price_definitions", { prices: MonopolisPrices})
         }
     }
 
@@ -88,28 +111,7 @@ export class GameMode {
 
     // Called on script_reload
     public Reload() {
-        print("Script reloaded!");
-
-        
-        let entities = Entities.FindAllByClassname("point_clientui_world_panel") as CPointClientUIWorldPanel[];
-        print("Number of world panels: ", entities.length);
-        for(let entity of entities) {
-            print(entity.GetName());
-            entity.AddCSSClasses(entity.GetName());
-        }
-
-        // Do some stuff here
-    }
-
-    private OnNpcSpawned(event: NpcSpawnedEvent) {
-        // After a hero unit spawns, apply modifier_panic for 8 seconds
-        const unit = EntIndexToHScript(event.entindex) as CDOTA_BaseNPC; // Cast to npc since this is the 'npc_spawned' event
-        // Give all real heroes (not illusions) the meepo_earthbind_ts_example spell
-        if (unit.IsRealHero()) {
-            if (!unit.HasAbility("meepo_earthbind_ts_example")) {
-                // Add lua ability to the unit
-                unit.AddAbility("meepo_earthbind_ts_example");
-            }
-        }
+        print("Script reloaded!");        
+        CustomGameEventManager.Send_ServerToAllClients("monopolis_price_definitions", { prices: MonopolisPrices})
     }
 }

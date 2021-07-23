@@ -1,0 +1,19 @@
+<root>
+    <styles>
+        <!-- Included css style files go here -->
+        <include src="s2r://panorama/styles/dotastyles.css" />
+        <include src="file://{resources}/styles/custom_game/hud.css" />
+    </styles>
+
+    <snippets>
+        <!-- Snippets go here -->
+    </snippets>
+
+    <ClientUIDialogPanel  hittest="false" class="CommunityChest">
+        <Panel id="CommunityChest">
+            <Label id="SpaceName" text="#tile_communitychest" />
+
+            <Image id="Image" src="file://{images}/spellicons/invoker_invoke.png"/>
+        </Panel>
+    </ClientUIDialogPanel>
+</root>

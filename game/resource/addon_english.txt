@@ -1,0 +1,54 @@
+"lang"
+{
+    "Language" "english"
+    "Tokens"
+    {
+        "addon_game_mode" "Monopolis"
+
+        "tile_brown1" "Mediterranean Avenue"
+        "tile_brown2" "Baltic Avenue"
+
+        "tile_teal1" "Oriental Avenue"
+        "tile_teal2" "Vermond Avenue"
+        "tile_teal3" "Connecticut Avenue"
+
+        "tile_magenta1" "St Charles Place"
+        "tile_magenta2" "States Avenue"
+        "tile_magenta3" "Virginia Avenue"
+
+        "tile_orange1" "St James Place"
+        "tile_orange2" "Tennessee Avenue"
+        "tile_orange3" "New York Avenue"
+
+        "tile_red1" "Kentucky Avenue"
+        "tile_red2" "Indiana Avenue"
+        "tile_red3" "Illinois Avenue"
+
+        "tile_yellow1" "Atlantic Avenue"
+        "tile_yellow2" "Ventnor Avenue"
+        "tile_yellow3" "Marvin Gardens"
+
+        "tile_green1" "Pacific Avenue"
+        "tile_green2" "North Carolina Avenue"
+        "tile_green3" "Pennslvania Avenue"
+
+        "tile_blue1" "Park Place"
+        "tile_blue2" "Boardwalk"
+
+        "tile_railroad1" "Reading Railroad"
+        "tile_railroad2" "Pennsylvania Railroad"
+        "tile_railroad3" "B & O Railroad"
+        "tile_railroad4" "Short\nLine"
+
+        "tile_utility1" "Electric Company"
+        "tile_utility2" "Water Works"
+
+        "tile_chance" "Chance"
+        "tile_communitychest" "Community Chest"
+
+        "tile_tax1" "Income Tax"
+        "tile_tax2" "Luxury Tax"
+
+        "pay" "Pay"
+    }
+}
