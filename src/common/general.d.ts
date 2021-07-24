@@ -56,7 +56,20 @@ type PurchasableTiles =
 |    "utility1"
 |    "utility2";
 
-type Tiles = 
+type PricedTiles = 
 | PurchasableTiles
 |    "tax1"
 |    "tax2";
+
+type Tiles = 
+| PricedTiles
+|    "chance1"
+|    "chance2"
+|    "chance3"
+|    "communitybreast1"
+|    "communitybreast2"
+|    "communitybreast3"
+|    "go"
+|    "jail"
+|    "freeparking"
+|    "gotojail";

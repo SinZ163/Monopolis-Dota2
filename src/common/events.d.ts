@@ -17,5 +17,6 @@ interface CustomGameEventDeclarations {
 }
 
 interface MonopolisPriceDefinitions {
-    prices: Record<Tiles, number>;
+    prices: Record<PricedTiles, number>;
+    houses: Record<HouseTiles, number>;
 }

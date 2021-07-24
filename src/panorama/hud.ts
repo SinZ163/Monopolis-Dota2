@@ -7,14 +7,14 @@ function SetImage(path: string) {
     image.SetImage(path);
 }
 
-let tilename: Tiles;
+let tilename: PricedTiles;
 
 let filename = $.GetContextPanel().GetParent()?.layoutfile;
 $.Msg($.GetContextPanel().GetParent()?.layoutfile);
 if (filename) { 
     let tile = filename.split("\\")[filename.split("\\").length - 1];
     if (tile.endsWith(".xml")) {
-        tilename = tile.substr(0, tile.length - 4) as Tiles;
+        tilename = tile.substr(0, tile.length - 4) as PricedTiles;
     } else {
         throw "wtf";
     }

@@ -1,43 +1,26 @@
 import { BaseModifier, registerModifier } from "../lib/dota_ts_adapter";
 
-// Base speed modifier -- Could be moved to a separate file
-class ModifierSpeed extends BaseModifier {
-    // Declare functions
-    DeclareFunctions(): ModifierFunction[] {
-        return [ModifierFunction.MOVESPEED_ABSOLUTE];
-    }
-
-    GetModifierMoveSpeed_Absolute(): number {
-        return 300;
-    }
-}
-
 @registerModifier()
-export class modifier_panic extends ModifierSpeed {
+export class modifier_vision extends BaseModifier {
     // Set state
     CheckState(): Partial<Record<modifierstate, boolean>> {
         return {
-            [ModifierState.COMMAND_RESTRICTED]: true,
+            [ModifierState.FORCED_FLYING_VISION]: true,
+            [ModifierState.PROVIDES_VISION]: true
         };
     }
 
-    // Override speed given by Modifier_Speed
-    GetModifierMoveSpeed_Absolute(): number {
-        return 540;
+    DeclareFunctions() {
+        return [
+            ModifierFunction.BONUS_DAY_VISION,
+            ModifierFunction.BONUS_NIGHT_VISION,
+        ];
     }
 
-    // Run when modifier instance is created
-    OnCreated(): void {
-        if (IsServer()) {
-            // Think every 0.3 seconds
-            this.StartIntervalThink(0.3);
-        }
+    GetBonusDayVision() {
+        return 5000;
     }
-
-    // Called when intervalThink is triggered
-    OnIntervalThink(): void {
-        const parent = this.GetParent();
-
-        parent.MoveToPosition((parent.GetAbsOrigin() + RandomVector(400)) as Vector);
+    GetBonusNightVision() {
+        return 5000;
     }
 }
