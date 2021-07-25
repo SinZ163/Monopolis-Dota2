@@ -1,0 +1,20 @@
+<root>
+    <scripts>
+        <!-- Included JS script files go here -->
+        <include src="file://{resources}/scripts/custom_game/indicator.js" />
+    </scripts>
+
+    <styles>
+        <!-- Included css style files go here -->
+        <include src="s2r://panorama/styles/dotastyles.css" />
+        <include src="file://{resources}/styles/custom_game/hud.css" />
+    </styles>
+
+    <snippets>
+        <!-- Snippets go here -->
+    </snippets>
+
+    <ClientUIDialogPanel  hittest="false" class="TileIndicator">
+        <Label id="IndicatorText" text="-1" />
+    </ClientUIDialogPanel>
+</root>

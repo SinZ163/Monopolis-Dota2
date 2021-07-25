@@ -1,5 +1,6 @@
 import { reloadable } from "./lib/tstl-utils";
-import { modifier_vision } from "./modifiers/modifier_panic";
+import { modifier_movetotile } from "./modifiers/modifier_movetotile";
+import { modifier_vision } from "./modifiers/modifier_vision";
 
 const heroSelectionTime = 20;
 
@@ -132,30 +133,23 @@ interface GameState {
     players: PlayerState[];
     currentTurn: number;
 }
-interface PlayerState {
-    pID: PlayerID;
-    money: number;
-    ownedProperties: PropertyOwnership[];
-    location: number;
-}
-interface PropertyOwnership {
-    property: PricedTiles;
-    houseCount: number;
+
+const TeamColours: Partial<Record<DotaTeam, [number,number,number]>> = {
+    [DotaTeam.CUSTOM_1]: [255, 0, 0],
+    [DotaTeam.CUSTOM_2]: [0, 255, 0],
+    [DotaTeam.CUSTOM_3]: [0, 0, 255],
+    [DotaTeam.CUSTOM_4]: [0, 255, 255],
+    [DotaTeam.CUSTOM_5]: [255, 0, 255],
+    [DotaTeam.CUSTOM_6]: [255, 255, 0],
 }
 
 @reloadable
 export class GameMode {
-    public state: GameState = { players: [], currentTurn: -1 };
 
     public static Precache(this: void, context: CScriptPrecacheContext) {
         PrecacheResource(
             "particle",
-            "particles/units/heroes/hero_meepo/meepo_earthbind_projectile_fx.vpcf",
-            context
-        );
-        PrecacheResource(
-            "soundfile",
-            "soundevents/game_sounds_heroes/game_sounds_meepo.vsndevts",
+            "particles/customgames/capturepoints/cp_allied_fire.vpcf",
             context
         );
     }
@@ -172,6 +166,8 @@ export class GameMode {
             () => this.OnStateChange(),
             undefined
         );
+        CustomGameEventManager.RegisterListener("monopolis_endturn", (user, event) => this.EndTurn(user, event));
+        CustomGameEventManager.RegisterListener("monopolis_requestdiceroll", (user, event) => this.RollDice(user, event));
     }
 
     private configure(): void {
@@ -184,12 +180,9 @@ export class GameMode {
         GameRules.SetCustomGameTeamMaxPlayers(DotaTeam.CUSTOM_5, 1);
         GameRules.SetCustomGameTeamMaxPlayers(DotaTeam.CUSTOM_6, 1);
 
-        SetTeamCustomHealthbarColor(DotaTeam.CUSTOM_1, 255, 0, 0);
-        SetTeamCustomHealthbarColor(DotaTeam.CUSTOM_2, 0, 255, 0);
-        SetTeamCustomHealthbarColor(DotaTeam.CUSTOM_3, 0, 0, 255);
-        SetTeamCustomHealthbarColor(DotaTeam.CUSTOM_4, 255, 0, 255);
-        SetTeamCustomHealthbarColor(DotaTeam.CUSTOM_5, 255, 255, 0);
-        SetTeamCustomHealthbarColor(DotaTeam.CUSTOM_6, 0, 255, 255);
+        for (let [k,v] of Object.entries(TeamColours)) {
+            SetTeamCustomHealthbarColor(tonumber(k) as DotaTeam, v[0], v[1], v[2]);
+        }
 
         GameRules.SetShowcaseTime(0);
         GameRules.SetHeroSelectionTime(heroSelectionTime);
@@ -207,7 +200,7 @@ export class GameMode {
         if (state === GameState.CUSTOM_GAME_SETUP) {
             // Automatically skip setup in tools
             if (IsInToolsMode()) {
-                Timers.CreateTimer(3, () => {
+                Timers.CreateTimer(1, () => {
                     GameRules.FinishCustomGameSetup();
                 });
             }
@@ -221,8 +214,20 @@ export class GameMode {
         }
     }
 
+    public IsPurchasableTile(tile: Tiles|string): tile is PurchasableTiles {
+        if (tile.startsWith("chance")) return false;
+        if (tile.startsWith("community")) return false;
+        if (tile.startsWith("tax")) return false;
+        if (tile === "go") return false;
+        if (tile === "jail") return false;
+        if (tile === "gotojail") return false;
+        if (tile === "freeparking") return false;
+        return true;
+    }
+
     private StartGame(): void {
         print("Game starting!");
+        CustomGameEventManager.Send_ServerToAllClients("monopolis_safetoendturn", {});
         CustomGameEventManager.Send_ServerToAllClients(
             "monopolis_price_definitions",
             { prices: MonopolisPrices, houses: HousePrices }
@@ -235,17 +240,28 @@ export class GameMode {
         }
 
         // TODO: Do logic to determine roll order
-        this.state = {
-            currentTurn: 0,
-            players: [],
-        };
-
+        for (let tile of Object.keys(TilesObj)) {
+            if (this.IsPurchasableTile(tile)) {
+                CustomNetTables.SetTableValue("property_ownership", tile, {
+                    houseCount: 0,
+                    owner: -1
+                });
+            }
+        }
+        CustomNetTables.SetTableValue("misc", "current_turn", {pID: 0, index: 1});
+        let rollOrder: Record<string, PlayerID> = {};
         for (let i = 0; i < DOTA_MAX_PLAYERS; i++) {
             if (PlayerResource.IsValidPlayer(i)) {
                 print(`${i} is a valid player?`);
                 let player = PlayerResource.GetPlayer(i);
                 if (!player) break;
+                rollOrder[i] = i;
 
+                player.GetTeam()
+                let colour = TeamColours[player.GetTeam()];
+                if (colour) {
+                    PlayerResource.SetCustomPlayerColor(i, colour[0], colour[1], colour[2]);
+                }
                 let hero = player?.GetAssignedHero();
 
                 if (hero) {
@@ -263,20 +279,24 @@ export class GameMode {
                     print(player, hero);
                 }
 
-                this.state.players.push({
+                CustomNetTables.SetTableValue("player_state", tostring(i), {
                     pID: i,
                     money: 1500,
-                    ownedProperties: [],
                     location: 0,
                 });
             }
         }
+        CustomNetTables.SetTableValue("misc", "roll_order", rollOrder);
         this.StartTurn();
     }
 
+    public GetCurrentPlayerState() {
+        return CustomNetTables.GetTableValue("player_state", tostring(CustomNetTables.GetTableValue("misc", "current_turn").pID));
+    }
+
     public StartTurn() {
-        print("TURN START", this.state.currentTurn);
-        let current = this.state.players[this.state.currentTurn];
+        let current = this.GetCurrentPlayerState();
+        print("Turn Start", current.pID);
 
         let currentPlayer = PlayerResource.GetPlayer(current.pID);
         if (!currentPlayer) {
@@ -284,12 +304,6 @@ export class GameMode {
             return;
         }
         let currentHero = currentPlayer.GetAssignedHero();
-        let tiles = Entities.FindAllByClassnameWithin(
-            "point_clientui_world_panel",
-            currentHero.GetAbsOrigin(),
-            700
-        );
-        //print(DeepPrintTable(tiles));
         let currentTile = Entities.FindByName(undefined, TilesReverseLookup[current.location]);
         if (!currentTile) {
             print(`Unable to find entity for tile ${TilesReverseLookup[current.location]} on location ${current.location}`);
@@ -310,84 +324,152 @@ export class GameMode {
         currentHero.MoveToPosition(
             (currentTile.GetAbsOrigin() + middleVector) as Vector
         );
-        Timers.CreateTimer(3, () => {
-            let dice1 = RandomInt(1, 6);
-            let dice2 = RandomInt(1, 6);
 
-            // TODO: Doubles logic
-            print(dice1, dice2);
-            let futureLocation = current.location + dice1 + dice2;
+        let indicators: Partial<Record<Tiles, number>> = {};
+        for (let i = 1; i <= 12; i++) {
+            let indicatorSpot = (current.location + i) % 40;
+            indicators[TilesReverseLookup[indicatorSpot]] = i;
+        }
 
-            let position = currentHero.GetAbsOrigin();
-            let firstMovement = true;
-            do {
-                let futureSide = math.floor(futureLocation / 10);
-                let currentSide = math.floor(current.location / 10);
+        CustomGameEventManager.Send_ServerToAllClients("monopolis_startturn", {indicators});
+    }
+    public RollDice(userId: EntityIndex, event: { PlayerID: PlayerID}) {
+        let current = this.GetCurrentPlayerState();
+        print("Roll Dice", current.pID);
 
-                let currentDelta = current.location % 10;
-                let futureDelta = futureLocation % 10;
+        // Anti Cheat, its just this simple
+        if (!IsInToolsMode() && event.PlayerID !== current.pID) {return;}
 
-                let rowAmount: number;
-                if (
-                    currentSide === futureSide ||
-                    (futureSide == currentSide + 1 && futureDelta === 0)
-                ) {
-                    rowAmount = futureDelta - currentDelta;
-                } else {
-                    rowAmount = 10 - currentDelta;
-                }
-                let sameSideVector: Vector;
-                if (currentSide === 0) {
-                    sameSideVector = Vector(rowAmount * -400, 0, 0);
-                } else if (currentSide === 1) {
-                    sameSideVector = Vector(0, rowAmount * 400, 0);
-                } else if (currentSide === 2) {
-                    sameSideVector = Vector(rowAmount * 400, 0, 0);
-                } else {
-                    sameSideVector = Vector(0, rowAmount * -400, 0);
-                }
-                position = (position + sameSideVector) as Vector;
-                ExecuteOrderFromTable({
-                    OrderType: UnitOrder.MOVE_TO_POSITION,
-                    UnitIndex: currentHero.GetEntityIndex(),
-                    Position: position,
-                    Queue: !firstMovement,
-                });
-                current.location = (current.location + rowAmount) % 40;
-                firstMovement = false;
-            } while (current.location !== futureLocation);
-            Timers.CreateTimer(20, () => {
-                print("Did we make it?");
-                let currentTile = Entities.FindByName(undefined, TilesReverseLookup[current.location]);
-                if (!currentTile) {
-                    print(`Unable to find entity for tile ${TilesReverseLookup[current.location]} on location ${current.location}`);
-                    return;
-                }
-                let offsetVector: Vector;
-                if (current.location < 10) {
-                    offsetVector = Vector(100, 100);
-                } else if (current.location < 20) {
-                    offsetVector = Vector(100, -100);
-                } else if (current.location < 30) {
-                    offsetVector = Vector(-100, -100);
-                } else {
-                    offsetVector = Vector(-100, 100);
-                }
-                currentHero.MoveToPosition((currentTile.GetAbsOrigin() + offsetVector) as Vector);
+        let currentPlayer = PlayerResource.GetPlayer(current.pID);
+        if (!currentPlayer) {
+            print("WTF why is player state on an invalid player");
+            return;
+        }
+        let currentHero = currentPlayer.GetAssignedHero();
+        let currentTile = Entities.FindByName(undefined, TilesReverseLookup[current.location]);
+        if (!currentTile) {
+            print(`Unable to find entity for tile ${TilesReverseLookup[current.location]} on location ${current.location}`);
+            return;
+        }
 
-                this.state.currentTurn =
-                    ++this.state.currentTurn % this.state.players.length;
-                Timers.CreateTimer(5, () => this.StartTurn());
+        let dice1 = RandomInt(1, 6);
+        let dice2 = RandomInt(1, 6);
+        CustomGameEventManager.Send_ServerToAllClients("monopolis_diceroll", {dice1, dice2});
+
+        // TODO: Doubles logic
+        print(dice1, dice2);
+        let futureLocation = (current.location + dice1 + dice2) % 40;
+
+        let position = currentHero.GetAbsOrigin();
+        let firstMovement = true;
+        do {
+            let futureSide = math.floor(futureLocation / 10);
+            let currentSide = math.floor(current.location / 10);
+
+            let currentDelta = current.location % 10;
+            let futureDelta = futureLocation % 10;
+
+            let rowAmount: number;
+            if (
+                currentSide === futureSide ||
+                (futureSide == (currentSide + 1)%4 && futureDelta === 0)
+            ) {
+                rowAmount = futureDelta - currentDelta;
+            } else {
+                rowAmount = 10 - currentDelta;
+            }
+            let sameSideVector: Vector;
+            if (currentSide === 0) {
+                sameSideVector = Vector(rowAmount * -400, 0, 0);
+            } else if (currentSide === 1) {
+                sameSideVector = Vector(0, rowAmount * 400, 0);
+            } else if (currentSide === 2) {
+                sameSideVector = Vector(rowAmount * 400, 0, 0);
+            } else {
+                sameSideVector = Vector(0, rowAmount * -400, 0);
+            }
+            position = (position + sameSideVector) as Vector;
+            ExecuteOrderFromTable({
+                OrderType: UnitOrder.MOVE_TO_POSITION,
+                UnitIndex: currentHero.GetEntityIndex(),
+                Position: position,
+                Queue: !firstMovement,
             });
-        });
+            current.location = (current.location + rowAmount) % 40;
+            firstMovement = false;
+        } while (current.location !== futureLocation);
+        CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
+        let futureTile = Entities.FindByName(undefined, TilesReverseLookup[futureLocation]);
+        if (!futureTile) {
+            print("Warning: future location tile is missing? wtf");
+            return;
+        }
+        CreateModifierThinker(currentHero, undefined, modifier_movetotile.name, { duration: -1}, position, currentHero.GetTeam(), false);
+    }
+    public FoundHero() {
+        CustomGameEventManager.Send_ServerToAllClients("monopolis_safetoendturn", {});
+        let current = this.GetCurrentPlayerState();
+        let property = TilesReverseLookup[current.location];
+        DeepPrintTable(current);
+        print(property);
+        if (this.IsPurchasableTile(property)) {
+            print("Is Purchasable?");
+            let propertyState = CustomNetTables.GetTableValue("property_ownership", property);
+            if (propertyState.owner === -1 && MonopolisPrices[property] >= current.money) {
+                print("Sold, to the current bidder");
+                propertyState.owner = current.pID;
+                current.money -= MonopolisPrices[property];
+                CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
+                CustomNetTables.SetTableValue("property_ownership", property, propertyState);
+            }
+        } else {
+            // TODO: implement tax/chance/communitybreast/etc
+        }
     }
 
-    public MoveToSpace() {}
+    public EndTurn(userId: EntityIndex, event: { PlayerID: PlayerID }) {
+        let current = this.GetCurrentPlayerState();
+        print("End Turn", current.pID);
+
+        // Anti Cheat, its just this simple
+        if (!IsInToolsMode() && event.PlayerID !== current.pID) {return;}
+
+        let currentPlayer = PlayerResource.GetPlayer(current.pID);
+        if (!currentPlayer) {
+            print("WTF why is player state on an invalid player");
+            return;
+        }
+        let currentHero = currentPlayer.GetAssignedHero();
+
+        let currentTile = Entities.FindByName(undefined, TilesReverseLookup[current.location]);
+        if (!currentTile) {
+            print(`Unable to find entity for tile ${TilesReverseLookup[current.location]} on location ${current.location}`);
+            return;
+        }
+        let offsetVector: Vector;
+        if (current.location < 10) {
+            offsetVector = Vector(100, 100);
+        } else if (current.location < 20) {
+            offsetVector = Vector(100, -100);
+        } else if (current.location < 30) {
+            offsetVector = Vector(-100, -100);
+        } else {
+            offsetVector = Vector(-100, 100);
+        }
+        currentHero.MoveToPosition((currentTile.GetAbsOrigin() + offsetVector) as Vector);
+
+        let currentTurn = CustomNetTables.GetTableValue("misc", "current_turn").index;
+        let rollOrder = CustomNetTables.GetTableValue("misc", "roll_order");
+        DeepPrintTable(rollOrder);
+        let savedTurn = { index: (currentTurn + 1) % Object.keys(rollOrder).length, pID: rollOrder[tostring((currentTurn + 1) % Object.keys(rollOrder).length)]};
+        DeepPrintTable(savedTurn);
+        CustomNetTables.SetTableValue("misc", "current_turn", savedTurn);
+        this.StartTurn();
+    }
 
     // Called on script_reload
     public Reload() {
         print("Script reloaded!");
-        Timers.RemoveTimers(true);
         this.StartGame();
     }
 }
