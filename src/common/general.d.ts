@@ -45,16 +45,20 @@ type HouseTiles =
 |    "blue1"
 |    "blue2";
 
-type PurchasableTiles = 
-|    HouseTiles
-
+type RailroadTiles =
 |    "railroad1"
 |    "railroad2"
 |    "railroad3"
-|    "railroad4"
+|    "railroad4";
 
+type UtilityTiles = 
 |    "utility1"
 |    "utility2";
+
+type PurchasableTiles = 
+|    HouseTiles
+|    RailroadTiles
+|    UtilityTiles;
 
 type PricedTiles = 
 | PurchasableTiles
@@ -73,3 +77,51 @@ type Tiles =
 |    "jail"
 |    "freeparking"
 |    "gotojail";
+
+
+type SpaceDefinition = PropertyDefinition | TaxDefinition | RailroadDefinition | UtilityDefinition | CardDefinition | MiscDefinition;
+
+interface BaseDefinition {
+    index: number;
+    id: Tiles;
+}
+interface PropertyDefinition extends BaseDefinition {
+    type: "property";
+    id: HouseTiles;
+    purchasePrice: number;
+    housePrice: number;
+    rentPrice: number;
+    house1Price: number;
+    house2Price: number;
+    house3Price: number;
+    house4Price: number;
+    hotelPrice: number;
+}
+interface TaxDefinition extends BaseDefinition {
+    type: "tax";
+    cost: number;
+}
+interface RailroadDefinition extends BaseDefinition {
+    type: "railroad";
+    id: RailroadTiles;
+    purchasePrice: number;
+    price1: number;
+    price2: number;
+    price3: number;
+    price4: number;
+}
+interface UtilityDefinition extends BaseDefinition {
+    type: "utility";
+    id: UtilityTiles;
+    purchasePrice: number;
+    singleMultiplier: number;
+    monopolyMultiplier: number;
+}
+
+interface CardDefinition extends BaseDefinition {
+    type: "card";
+    deck: "chance"|"communitybreast";
+} 
+interface MiscDefinition extends BaseDefinition {
+    type: "misc";
+}

@@ -14,8 +14,11 @@ export class modifier_vision extends BaseModifier {
         return [
             ModifierFunction.BONUS_DAY_VISION,
             ModifierFunction.BONUS_NIGHT_VISION,
+            ModifierFunction.MOVESPEED_BONUS_CONSTANT,
         ];
     }
+
+    GetModifierMoveSpeedBonus_Constant = () => 800;
 
     GetBonusDayVision() {
         return 5000;

@@ -13,7 +13,7 @@
 
 // To declare an event for use, add it to this table with the type of its data
 interface CustomGameEventDeclarations {
-    monopolis_price_definitions: MonopolisPriceDefinitions, // S-->C
+    monopolis_price_definitions: Record<Tiles, SpaceDefinition>, // S-->C
     monopolis_diceroll: MonopolisDiceRoll, //S-->C
     monopolis_requestdiceroll: MonopolisEmptyEvent, //C-->S
     monopolis_safetoendturn: MonopolisEmptyEvent, //S-->C
@@ -47,12 +47,6 @@ interface PlayerState {
 
 
 interface MonopolisEmptyEvent {}
-
-interface MonopolisPriceDefinitions {
-    prices: Record<PricedTiles, number>;
-    houses: Record<HouseTiles, number>;
-}
-
 interface MonopolisDiceRoll {
     dice1: number,
     dice2: number

@@ -10,124 +10,419 @@ declare global {
     }
 }
 
-const MonopolisPrices: Record<PricedTiles, number> = {
-    brown1: 60,
-    brown2: 60,
-
-    teal1: 100,
-    teal2: 100,
-    teal3: 120,
-
-    magenta1: 140,
-    magenta2: 140,
-    magenta3: 160,
-
-    orange1: 180,
-    orange2: 180,
-    orange3: 200,
-
-    red1: 220,
-    red2: 220,
-    red3: 240,
-
-    yellow1: 260,
-    yellow2: 260,
-    yellow3: 280,
-
-    green1: 300,
-    green2: 300,
-    green3: 320,
-
-    blue1: 350,
-    blue2: 400,
-
-    railroad1: 200,
-    railroad2: 200,
-    railroad3: 200,
-    railroad4: 200,
-
-    utility1: 150,
-    utility2: 150,
-
-    tax1: -200,
-    tax2: -100,
+const TilesObj: Record<Tiles,SpaceDefinition> = {
+    go: {
+        type: "misc",
+        id: "go",
+        index: 0
+    },
+    brown1: {
+        type: "property",
+        id: "brown1",
+        index: 1,
+        purchasePrice: 60,
+        housePrice: 50,
+        rentPrice: 2,
+        house1Price: 10,
+        house2Price: 30,
+        house3Price: 90,
+        house4Price: 160,
+        hotelPrice: 250
+    },
+    communitybreast1: {
+        type: "card",
+        id: "communitybreast1",
+        index: 2,
+        deck: "communitybreast"
+    },
+    brown2: {
+        type: "property",
+        id: "brown2",
+        index: 3,
+        purchasePrice: 60,
+        housePrice: 50,
+        rentPrice: 4,
+        house1Price: 20,
+        house2Price: 60,
+        house3Price: 180,
+        house4Price: 320,
+        hotelPrice: 450
+    },
+    tax1: {
+        type: "tax",
+        id: "tax1",
+        index: 4,
+        cost: 200
+    },
+    railroad1: {
+        type: "railroad",
+        id: "railroad1",
+        index: 5,
+        purchasePrice: 200,
+        price1: 25,
+        price2: 50,
+        price3: 100,
+        price4: 200
+    },
+    teal1: {
+        type: "property",
+        id: "teal1",
+        index: 6,
+        purchasePrice: 100,
+        housePrice: 50,
+        rentPrice: 6,
+        house1Price: 30,
+        house2Price: 90,
+        house3Price: 270,
+        house4Price: 400,
+        hotelPrice: 550
+    },
+    chance1: {
+        type: "card",
+        id: "chance1",
+        index: 7,
+        deck: "chance"
+    },
+    teal2: {
+        type: "property",
+        id: "teal2",
+        index: 8,
+        purchasePrice: 100,
+        housePrice: 50,
+        rentPrice: 6,
+        house1Price: 30,
+        house2Price: 90,
+        house3Price: 270,
+        house4Price: 400,
+        hotelPrice: 550
+    },
+    teal3: {
+        type: "property",
+        id: "teal3",
+        index: 9,
+        purchasePrice: 120,
+        housePrice: 50,
+        rentPrice: 8,
+        house1Price: 40,
+        house2Price: 100,
+        house3Price: 300,
+        house4Price: 450,
+        hotelPrice: 600
+    },
+    jail: {
+        type: "misc",
+        id: "jail",
+        index: 10
+    },
+    magenta1: {
+        type: "property",
+        id: "magenta1",
+        index: 11,
+        purchasePrice: 140,
+        housePrice: 100,
+        rentPrice: 10,
+        house1Price: 50,
+        house2Price: 150,
+        house3Price: 450,
+        house4Price: 625,
+        hotelPrice: 750
+    },
+    utility1: {
+        type: "utility",
+        id: "utility1",
+        index: 12,
+        purchasePrice: 150,
+        singleMultiplier: 4,
+        monopolyMultiplier: 10
+    },
+    magenta2: {
+        type: "property",
+        id: "magenta2",
+        index: 13,
+        purchasePrice: 140,
+        housePrice: 100,
+        rentPrice: 10,
+        house1Price: 50,
+        house2Price: 150,
+        house3Price: 450,
+        house4Price: 625,
+        hotelPrice: 750
+    },
+    magenta3: {
+        type: "property",
+        id: "magenta3",
+        index: 14,
+        purchasePrice: 160,
+        housePrice: 100,
+        rentPrice: 12,
+        house1Price: 60,
+        house2Price: 180,
+        house3Price: 500,
+        house4Price: 700,
+        hotelPrice: 900
+    },
+    railroad2: {
+        type: "railroad",
+        id: "railroad2",
+        index: 15,
+        purchasePrice: 200,
+        price1: 25,
+        price2: 50,
+        price3: 100,
+        price4: 200
+    },
+    orange1: {
+        type: "property",
+        id: "orange1",
+        index: 16,
+        purchasePrice: 180,
+        housePrice: 100,
+        rentPrice: 14,
+        house1Price: 70,
+        house2Price: 200,
+        house3Price: 550,
+        house4Price: 750,
+        hotelPrice: 950
+    },
+    communitybreast2: {
+        type: "card",
+        id: "communitybreast2",
+        index: 17,
+        deck: "communitybreast"
+    },
+    orange2: {
+        type: "property",
+        id: "orange2",
+        index: 18,
+        purchasePrice: 180,
+        housePrice: 100,
+        rentPrice: 14,
+        house1Price: 70,
+        house2Price: 200,
+        house3Price: 550,
+        house4Price: 750,
+        hotelPrice: 950
+    },
+    orange3: {
+        type: "property",
+        id: "orange3",
+        index: 19,
+        purchasePrice: 200,
+        rentPrice: 16,
+        housePrice: 100,
+        house1Price: 80,
+        house2Price: 220,
+        house3Price: 600,
+        house4Price: 800,
+        hotelPrice: 1000
+    },
+    freeparking: {
+        type: "misc",
+        id: "freeparking",
+        index: 20
+    },
+    red1: {
+        type: "property",
+        id: "red1",
+        index: 21,
+        purchasePrice: 220,
+        housePrice: 150,
+        rentPrice: 18,
+        house1Price: 90,
+        house2Price: 250,
+        house3Price: 700,
+        house4Price: 875,
+        hotelPrice: 1050
+    },
+    chance2: {
+        type: "card",
+        id: "chance2",
+        index: 22,
+        deck: "chance"
+    },
+    red2: {
+        type: "property",
+        id: "red2",
+        index: 23,
+        purchasePrice: 220,
+        housePrice: 150,
+        rentPrice: 18,
+        house1Price: 90,
+        house2Price: 250,
+        house3Price: 700,
+        house4Price: 875,
+        hotelPrice: 1050
+    },
+    red3: {
+        type: "property",
+        id: "red3",
+        index: 24,
+        purchasePrice: 240,
+        housePrice: 150,
+        rentPrice: 20,
+        house1Price: 100,
+        house2Price: 300,
+        house3Price: 750,
+        house4Price: 925,
+        hotelPrice: 1100
+    },
+    railroad3: {
+        type: "railroad",
+        id: "railroad3",
+        index: 25,
+        purchasePrice: 200,
+        price1: 25,
+        price2: 50,
+        price3: 100,
+        price4: 200
+    },
+    yellow1: {
+        type: "property",
+        id: "yellow1",
+        index: 26,
+        purchasePrice: 260,
+        housePrice: 150,
+        rentPrice: 22,
+        house1Price: 110,
+        house2Price: 330,
+        house3Price: 800,
+        house4Price: 950,
+        hotelPrice: 1150
+    },
+    yellow2: {
+        type: "property",
+        id: "yellow2",
+        index: 27,
+        purchasePrice: 260,
+        housePrice: 150,
+        rentPrice: 22,
+        house1Price: 110,
+        house2Price: 330,
+        house3Price: 800,
+        house4Price: 950,
+        hotelPrice: 1150
+    },
+    utility2: {
+        type: "utility",
+        id: "utility2",
+        index: 28,
+        purchasePrice: 150,
+        singleMultiplier: 4,
+        monopolyMultiplier: 10
+    },
+    yellow3: {
+        type: "property",
+        id: "yellow3",
+        index: 29,
+        purchasePrice: 280,
+        housePrice: 150,
+        rentPrice: 24,
+        house1Price: 120,
+        house2Price: 360,
+        house3Price: 850,
+        house4Price: 1025,
+        hotelPrice: 1200
+    },
+    gotojail: {
+        type: "misc",
+        id: "gotojail",
+        index: 30
+    },
+    green1: {
+        type: "property",
+        id: "green1",
+        index: 31,
+        purchasePrice: 300,
+        housePrice: 200,
+        rentPrice: 26,
+        house1Price: 130,
+        house2Price: 390,
+        house3Price: 900,
+        house4Price: 1100,
+        hotelPrice: 1275
+    },
+    green2: {
+        type: "property",
+        id: "green2",
+        index: 32,
+        purchasePrice: 300,
+        housePrice: 200,
+        rentPrice: 26,
+        house1Price: 130,
+        house2Price: 390,
+        house3Price: 900,
+        house4Price: 1100,
+        hotelPrice: 1275
+    },
+    communitybreast3: {
+        type: "card",
+        id: "communitybreast3",
+        index: 33,
+        deck: "communitybreast"
+    },
+    green3: {
+        type: "property",
+        id: "green3",
+        index: 34,
+        purchasePrice: 320,
+        housePrice: 200,
+        rentPrice: 28,
+        house1Price: 150,
+        house2Price: 450,
+        house3Price: 1000,
+        house4Price: 1200,
+        hotelPrice: 1400
+    },
+    railroad4: {
+        type: "railroad",
+        id: "railroad4",
+        index: 35,
+        purchasePrice: 200,
+        price1: 25,
+        price2: 50,
+        price3: 100,
+        price4: 200
+    },
+    chance3: {
+        type: "card",
+        id: "chance3",
+        index: 36,
+        deck: "chance"
+    },
+    blue1: {
+        type: "property",
+        id: "blue1",
+        index: 37,
+        purchasePrice: 350,
+        housePrice: 200,
+        rentPrice: 35,
+        house1Price: 175,
+        house2Price: 500,
+        house3Price: 1100,
+        house4Price: 1300,
+        hotelPrice: 1500
+    },
+    tax2: {
+        type: "tax",
+        id: "tax2",
+        index: 38,
+        cost: 100
+    },
+    blue2: {
+        type: "property",
+        id: "blue2",
+        index: 39,
+        purchasePrice: 400,
+        housePrice: 200,
+        rentPrice: 50,
+        house1Price: 200,
+        house2Price: 600,
+        house3Price: 1400,
+        house4Price: 1700,
+        hotelPrice: 2000 
+    }
 };
-
-const HousePrices: Record<HouseTiles, number> = {
-    brown1: 50,
-    brown2: 50,
-
-    teal1: 50,
-    teal2: 50,
-    teal3: 50,
-
-    magenta1: 100,
-    magenta2: 100,
-    magenta3: 100,
-
-    orange1: 100,
-    orange2: 100,
-    orange3: 100,
-
-    red1: 150,
-    red2: 150,
-    red3: 150,
-
-    yellow1: 150,
-    yellow2: 150,
-    yellow3: 150,
-
-    green1: 200,
-    green2: 200,
-    green3: 200,
-
-    blue1: 200,
-    blue2: 200,
-};
-
-const TilesObj = {
-    go: 0,
-    brown1: 1,
-    communitybreast1: 2,
-    brown2: 3,
-    tax1: 4,
-    railroad1: 5,
-    teal1: 6,
-    chance1: 7,
-    teal2: 8,
-    teal3: 9,
-    jail: 10,
-    magenta1: 11,
-    utility1: 12,
-    magenta2: 13,
-    magenta3: 14,
-    railroad2: 15,
-    orange1: 16,
-    communitybreast2: 17,
-    orange2: 18,
-    orange3: 19,
-    freeparking: 20,
-    red1: 21,
-    chance2: 22,
-    red2: 23,
-    red3: 24,
-    railroad3: 25,
-    yellow1: 26,
-    yellow2: 27,
-    utility2: 28,
-    yellow3: 29,
-    gotojail: 30,
-    green1: 31,
-    green2: 32,
-    communitybreast3: 33,
-    green3: 34,
-    railroad4: 35,
-    chance3: 36,
-    blue1: 37,
-    tax2: 38,
-    blue2: 39
-};
-const TilesReverseLookup: Record<number,Tiles> = Object.fromEntries(Object.entries(TilesObj).map<[number, Tiles]>(val => [val[1], val[0] as Tiles]));
+const TilesReverseLookup: Record<number,Tiles> = Object.fromEntries(Object.entries(TilesObj).map<[number, Tiles]>(val => [val[1].index, val[0] as Tiles]));
 
 interface GameState {
     players: PlayerState[];
@@ -214,15 +509,14 @@ export class GameMode {
         }
     }
 
-    public IsPurchasableTile(tile: Tiles|string): tile is PurchasableTiles {
-        if (tile.startsWith("chance")) return false;
-        if (tile.startsWith("community")) return false;
-        if (tile.startsWith("tax")) return false;
-        if (tile === "go") return false;
-        if (tile === "jail") return false;
-        if (tile === "gotojail") return false;
-        if (tile === "freeparking") return false;
-        return true;
+    public IsPurchasableTile(tile: SpaceDefinition): tile is PropertyDefinition | RailroadDefinition | UtilityDefinition {
+        switch(tile.type) {
+            case "property":
+            case "railroad":
+            case "utility":
+                return true;
+        }
+        return false;
     }
 
     private StartGame(): void {
@@ -230,7 +524,7 @@ export class GameMode {
         CustomGameEventManager.Send_ServerToAllClients("monopolis_safetoendturn", {});
         CustomGameEventManager.Send_ServerToAllClients(
             "monopolis_price_definitions",
-            { prices: MonopolisPrices, houses: HousePrices }
+            TilesObj
         );
 
         let go = Entities.FindByName(undefined,"go");
@@ -240,15 +534,15 @@ export class GameMode {
         }
 
         // TODO: Do logic to determine roll order
-        for (let tile of Object.keys(TilesObj)) {
+        for (let tile of Object.values(TilesObj)) {
             if (this.IsPurchasableTile(tile)) {
-                CustomNetTables.SetTableValue("property_ownership", tile, {
+                CustomNetTables.SetTableValue("property_ownership", tile.id, {
                     houseCount: 0,
                     owner: -1
                 });
             }
         }
-        CustomNetTables.SetTableValue("misc", "current_turn", {pID: 0, index: 1});
+        CustomNetTables.SetTableValue("misc", "current_turn", {pID: 0, index: 0});
         let rollOrder: Record<string, PlayerID> = {};
         for (let i = 0; i < DOTA_MAX_PLAYERS; i++) {
             if (PlayerResource.IsValidPlayer(i)) {
@@ -326,6 +620,8 @@ export class GameMode {
         );
 
         let indicators: Partial<Record<Tiles, number>> = {};
+        print(TilesReverseLookup);
+        DeepPrintTable(TilesReverseLookup);
         for (let i = 1; i <= 12; i++) {
             let indicatorSpot = (current.location + i) % 40;
             indicators[TilesReverseLookup[indicatorSpot]] = i;
@@ -370,10 +666,7 @@ export class GameMode {
             let futureDelta = futureLocation % 10;
 
             let rowAmount: number;
-            if (
-                currentSide === futureSide ||
-                (futureSide == (currentSide + 1)%4 && futureDelta === 0)
-            ) {
+            if (currentSide === futureSide) {
                 rowAmount = futureDelta - currentDelta;
             } else {
                 rowAmount = 10 - currentDelta;
@@ -389,14 +682,17 @@ export class GameMode {
                 sameSideVector = Vector(0, rowAmount * -400, 0);
             }
             position = (position + sameSideVector) as Vector;
+            print("Pre Order", firstMovement);
             ExecuteOrderFromTable({
                 OrderType: UnitOrder.MOVE_TO_POSITION,
                 UnitIndex: currentHero.GetEntityIndex(),
                 Position: position,
                 Queue: !firstMovement,
             });
+            print("Post Order", firstMovement);
             current.location = (current.location + rowAmount) % 40;
             firstMovement = false;
+            print(current.location, futureLocation);
         } while (current.location !== futureLocation);
         CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
         let futureTile = Entities.FindByName(undefined, TilesReverseLookup[futureLocation]);
@@ -410,21 +706,36 @@ export class GameMode {
         CustomGameEventManager.Send_ServerToAllClients("monopolis_safetoendturn", {});
         let current = this.GetCurrentPlayerState();
         let property = TilesReverseLookup[current.location];
+        let tile = TilesObj[property];
         DeepPrintTable(current);
         print(property);
-        if (this.IsPurchasableTile(property)) {
+        if (this.IsPurchasableTile(tile)) {
             print("Is Purchasable?");
-            let propertyState = CustomNetTables.GetTableValue("property_ownership", property);
-            if (propertyState.owner === -1 && MonopolisPrices[property] >= current.money) {
+            let propertyState = CustomNetTables.GetTableValue("property_ownership", tile.id);
+            if (propertyState.owner > -1) {
+                print("Well you need to pay up now");
+                if (tile.type === "property") {
+                    current.money -= tile.rentPrice;
+                    let owner = CustomNetTables.GetTableValue("player_state", tostring(propertyState.owner));
+                    owner.money += tile.rentPrice;
+                    CustomNetTables.SetTableValue("player_state", tostring(owner.pID), owner);
+                }
+                // TODO: handle railroad and utility in this category
+            }
+            // TODO: Ask user if they want to buy or auction (must select 1 of 2 to continue game)
+            else if (propertyState.owner === -1 && current.money >= tile.purchasePrice) {
                 print("Sold, to the current bidder");
                 propertyState.owner = current.pID;
-                current.money -= MonopolisPrices[property];
-                CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
-                CustomNetTables.SetTableValue("property_ownership", property, propertyState);
+                current.money -= tile.purchasePrice;
+                CustomNetTables.SetTableValue("property_ownership", tile.id, {...propertyState});
             }
+        } else if (tile.type === "tax") {
+            print("Taxman wants your money");
+            current.money -= tile.cost;
         } else {
-            // TODO: implement tax/chance/communitybreast/etc
+            // TODO: implement chance/communitybreast/etc
         }
+        CustomNetTables.SetTableValue("player_state", tostring(current.pID), {...current});
     }
 
     public EndTurn(userId: EntityIndex, event: { PlayerID: PlayerID }) {
@@ -460,6 +771,7 @@ export class GameMode {
 
         let currentTurn = CustomNetTables.GetTableValue("misc", "current_turn").index;
         let rollOrder = CustomNetTables.GetTableValue("misc", "roll_order");
+        print(currentTurn);
         DeepPrintTable(rollOrder);
         let savedTurn = { index: (currentTurn + 1) % Object.keys(rollOrder).length, pID: rollOrder[tostring((currentTurn + 1) % Object.keys(rollOrder).length)]};
         DeepPrintTable(savedTurn);

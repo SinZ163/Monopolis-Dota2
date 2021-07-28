@@ -1,7 +1,7 @@
 <root>
     <scripts>
         <!-- Included JS script files go here -->
-        <include src="file://{resources}/scripts/custom_game/hud.js" />
+        <include src="file://{resources}/scripts/custom_game/tile.js" />
     </scripts>
 
     <styles>

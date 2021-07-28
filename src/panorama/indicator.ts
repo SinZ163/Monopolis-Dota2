@@ -18,6 +18,8 @@ CustomNetTables.SubscribeNetTableListener("property_ownership", (_, tile, value)
     if (value.owner > -1) {
         let colour = ColorToHexCode(Players.GetPlayerColor(value.owner));
         $.GetContextPanel().style.backgroundColor = colour;
+    } else {
+        $.GetContextPanel().style.backgroundColor = "#FFFFFF";
     }
 })
 

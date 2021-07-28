@@ -76,11 +76,18 @@ if (filename) {
 
 GameEvents.Subscribe("monopolis_price_definitions", event => {
     let spacePrice = $("#SpacePrice") as LabelPanel;
-    let price = event.prices[tilename];
-    if (price < 0) {
+    let tile = event[tilename];
+    let price: number|undefined = undefined;
+    if (tile.type === "tax") {
         let payText = $("#PaymentText") as LabelPanel;
         $.GetContextPanel().AddClass("HasPayment");
         payText.text = $.Localize("#pay");
+        price = tile.cost;
     }
-    spacePrice.text = (Math.abs(price)).toFixed(0);
+    if (tile.type === "property" || tile.type === "railroad" || tile.type === "utility") {
+        price = tile.purchasePrice;
+    }
+    if (price !== undefined) {
+        spacePrice.text = (price).toFixed(0);
+    }
 });

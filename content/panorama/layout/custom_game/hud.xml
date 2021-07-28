@@ -1,6 +1,7 @@
 <root>
     <scripts>
         <!-- Included JS script files go here -->
+        <include src="file://{resources}/scripts/custom_game/hud.js" />
     </scripts>
 
     <styles>
@@ -11,8 +12,32 @@
 
     <snippets>
         <!-- Snippets go here -->
+        <snippet name="MoneyTableRow">
+            <Panel class="MoneyTableRow">
+                <DOTAAvatarImage id="Image" hittest="false" />
+                <DOTAUserName id="Name" hittest="false" />
+                <Label id="GoldAmount" hittest="false" />
+            </Panel>
+        </snippet>
     </snippets>
 
     <Panel hittest="false" class="MainHud">
+        <Panel id="DiceRoll" class="Hidden">
+            <Label id="dice1" text="-1" />
+            <Label id="dice2" text="-1" />
+        </Panel>
+        <Panel id="RollDiceButton" class="Hidden">
+            <Button id="RollDiceChoice" class="Choice" onactivate="RollDice()">
+                <Label id="RollDiceActiveLabel" text="#rolldice" />
+            </Button>
+            <DOTAScenePanel id="RollDiceSelection" map="backgrounds/accept_popup_test" camera="shot_camera" />
+        </Panel>
+        <Panel id="Endturn" class="Hidden Active">
+            <Button id="EndTurnChoice" class="Choice" onactivate="Endturn()">
+                <Label id="EndturnActiveLabel" text="#endturn" />
+            </Button>
+            <DOTAScenePanel id="EndturnSelection" map="backgrounds/accept_popup_test" camera="shot_camera" />
+        </Panel>
+        <Panel id="MoneyTable" />
     </Panel>
 </root>

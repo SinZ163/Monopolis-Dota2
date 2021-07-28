@@ -1,9 +1,4 @@
 <root>
-    <scripts>
-        <!-- Included JS script files go here -->
-        <include src="file://{resources}/scripts/custom_game/hud.js" />
-    </scripts>
-
     <styles>
         <!-- Included css style files go here -->
         <include src="s2r://panorama/styles/dotastyles.css" />

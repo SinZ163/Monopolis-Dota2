@@ -50,5 +50,17 @@
         "tile_tax2" "Luxury Tax"
 
         "pay" "Pay"
+
+        "go_above" ""
+        "go_below" "GO"
+
+        "freeparking_above" "FREE"
+        "freeparking_below" "PARKING"
+
+        "gotojail_above" "GO TO"
+        "gotojail_below" "JAIL"
+
+        "jail_above" ""
+        "jail_below" "JAIL"
     }
 }
