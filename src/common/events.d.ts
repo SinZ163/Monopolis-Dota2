@@ -14,10 +14,7 @@
 // To declare an event for use, add it to this table with the type of its data
 interface CustomGameEventDeclarations {
     monopolis_price_definitions: Record<Tiles, SpaceDefinition>, // S-->C
-    monopolis_diceroll: MonopolisDiceRoll, //S-->C
     monopolis_requestdiceroll: MonopolisEmptyEvent, //C-->S
-    monopolis_safetoendturn: MonopolisEmptyEvent, //S-->C
-    monopolis_startturn: MonopolisStartTurn, //S-->C
     monopolis_endturn: MonopolisEmptyEvent, //C-->S
 }
 
@@ -25,10 +22,7 @@ interface CustomNetTableDeclarations {
     property_ownership: Record<PurchasableTiles, PropertyOwnership>,
     player_state: Record<string, PlayerState>,
     misc: {
-        current_turn: {
-            pID: PlayerID,
-            index: number,
-        },
+        current_turn: TurnState
         roll_order: Record<string, PlayerID>,
     }
 }

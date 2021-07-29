@@ -59,10 +59,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         id: "railroad1",
         index: 5,
         purchasePrice: 200,
-        price1: 25,
-        price2: 50,
-        price3: 100,
-        price4: 200
+        prices: [25, 50, 100, 200]
     },
     teal1: {
         type: "property",
@@ -132,8 +129,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         id: "utility1",
         index: 12,
         purchasePrice: 150,
-        singleMultiplier: 4,
-        monopolyMultiplier: 10
+        multipliers: [4, 10]
     },
     magenta2: {
         type: "property",
@@ -166,10 +162,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         id: "railroad2",
         index: 15,
         purchasePrice: 200,
-        price1: 25,
-        price2: 50,
-        price3: 100,
-        price4: 200
+        prices: [25, 50, 100, 200]
     },
     orange1: {
         type: "property",
@@ -271,10 +264,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         id: "railroad3",
         index: 25,
         purchasePrice: 200,
-        price1: 25,
-        price2: 50,
-        price3: 100,
-        price4: 200
+        prices: [25, 50, 100, 200]
     },
     yellow1: {
         type: "property",
@@ -307,8 +297,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         id: "utility2",
         index: 28,
         purchasePrice: 150,
-        singleMultiplier: 4,
-        monopolyMultiplier: 10
+        multipliers: [4, 10]
     },
     yellow3: {
         type: "property",
@@ -378,10 +367,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         id: "railroad4",
         index: 35,
         purchasePrice: 200,
-        price1: 25,
-        price2: 50,
-        price3: 100,
-        price4: 200
+        prices: [25, 50, 100, 200]
     },
     chance3: {
         type: "card",
@@ -521,7 +507,6 @@ export class GameMode {
 
     private StartGame(): void {
         print("Game starting!");
-        CustomGameEventManager.Send_ServerToAllClients("monopolis_safetoendturn", {});
         CustomGameEventManager.Send_ServerToAllClients(
             "monopolis_price_definitions",
             TilesObj
@@ -542,7 +527,7 @@ export class GameMode {
                 });
             }
         }
-        CustomNetTables.SetTableValue("misc", "current_turn", {pID: 0, index: 0});
+        CustomNetTables.SetTableValue("misc", "current_turn", {pID: 0, type: "transition"});
         let rollOrder: Record<string, PlayerID> = {};
         for (let i = 0; i < DOTA_MAX_PLAYERS; i++) {
             if (PlayerResource.IsValidPlayer(i)) {
@@ -626,8 +611,7 @@ export class GameMode {
             let indicatorSpot = (current.location + i) % 40;
             indicators[TilesReverseLookup[indicatorSpot]] = i;
         }
-
-        CustomGameEventManager.Send_ServerToAllClients("monopolis_startturn", {indicators});
+        CustomNetTables.SetTableValue("misc", "current_turn", {type: "start", pID: current.pID, indicators});
     }
     public RollDice(userId: EntityIndex, event: { PlayerID: PlayerID}) {
         let current = this.GetCurrentPlayerState();
@@ -650,7 +634,13 @@ export class GameMode {
 
         let dice1 = RandomInt(1, 6);
         let dice2 = RandomInt(1, 6);
-        CustomGameEventManager.Send_ServerToAllClients("monopolis_diceroll", {dice1, dice2});
+        let turnState: TurnState = {
+            pID: current.pID,
+            type: "diceroll",
+            dice1,
+            dice2,
+        }
+        CustomNetTables.SetTableValue("misc", "current_turn", turnState);
 
         // TODO: Doubles logic
         print(dice1, dice2);
@@ -703,16 +693,15 @@ export class GameMode {
         CreateModifierThinker(currentHero, undefined, modifier_movetotile.name, { duration: -1}, position, currentHero.GetTeam(), false);
     }
     public FoundHero() {
-        CustomGameEventManager.Send_ServerToAllClients("monopolis_safetoendturn", {});
         let current = this.GetCurrentPlayerState();
         let property = TilesReverseLookup[current.location];
         let tile = TilesObj[property];
         DeepPrintTable(current);
         print(property);
         if (this.IsPurchasableTile(tile)) {
-            print("Is Purchasable?");
             let propertyState = CustomNetTables.GetTableValue("property_ownership", tile.id);
-            if (propertyState.owner > -1) {
+            // Owned property that isn't current player and it isn't mortgaged (-1)
+            if (propertyState.owner > -1 && propertyState.owner !== current.pID && propertyState.houseCount >= 0) {
                 print("Well you need to pay up now");
                 if (tile.type === "property") {
                     current.money -= tile.rentPrice;
@@ -720,14 +709,44 @@ export class GameMode {
                     owner.money += tile.rentPrice;
                     CustomNetTables.SetTableValue("player_state", tostring(owner.pID), owner);
                 }
-                // TODO: handle railroad and utility in this category
+                else if (tile.type === "railroad") {
+                    let railroads = [
+                        CustomNetTables.GetTableValue("property_ownership", "railroad1"),
+                        CustomNetTables.GetTableValue("property_ownership", "railroad2"),
+                        CustomNetTables.GetTableValue("property_ownership", "railroad3"),
+                        CustomNetTables.GetTableValue("property_ownership", "railroad4")
+                    ];
+                    let ownedRailroads = railroads.filter(railroad => railroad.owner === propertyState.owner).length;
+                    let price = tile.prices[ownedRailroads - 1];
+                    current.money -= price;
+                    let owner = CustomNetTables.GetTableValue("player_state", tostring(propertyState.owner));
+                    owner.money += price;
+                    CustomNetTables.SetTableValue("player_state", tostring(owner.pID), owner);
+                } else {
+                    let turnState = CustomNetTables.GetTableValue("misc", "current_turn");
+                    if (turnState.type === "diceroll") {
+                        let diceSum = turnState.dice1 + turnState.dice2;
+                        let railroads = [
+                            CustomNetTables.GetTableValue("property_ownership", "utility1"),
+                            CustomNetTables.GetTableValue("property_ownership", "utility2"),
+                        ];
+                        let ownedUtilities = railroads.filter(railroad => railroad.owner === propertyState.owner).length;
+                        let price = tile.multipliers[ownedUtilities - 1] * diceSum;
+                        current.money -= price;
+                        let owner = CustomNetTables.GetTableValue("player_state", tostring(propertyState.owner));
+                        owner.money += price;
+                        CustomNetTables.SetTableValue("player_state", tostring(owner.pID), owner);
+                    } else {
+                        throw "wtf why is it not diceroll state";
+                    }
+                }
             }
             // TODO: Ask user if they want to buy or auction (must select 1 of 2 to continue game)
             else if (propertyState.owner === -1 && current.money >= tile.purchasePrice) {
                 print("Sold, to the current bidder");
                 propertyState.owner = current.pID;
                 current.money -= tile.purchasePrice;
-                CustomNetTables.SetTableValue("property_ownership", tile.id, {...propertyState});
+                CustomNetTables.SetTableValue("property_ownership", tile.id, propertyState);
             }
         } else if (tile.type === "tax") {
             print("Taxman wants your money");
@@ -735,7 +754,8 @@ export class GameMode {
         } else {
             // TODO: implement chance/communitybreast/etc
         }
-        CustomNetTables.SetTableValue("player_state", tostring(current.pID), {...current});
+        CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
+        CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID})
     }
 
     public EndTurn(userId: EntityIndex, event: { PlayerID: PlayerID }) {
@@ -769,11 +789,15 @@ export class GameMode {
         }
         currentHero.MoveToPosition((currentTile.GetAbsOrigin() + offsetVector) as Vector);
 
-        let currentTurn = CustomNetTables.GetTableValue("misc", "current_turn").index;
+        let currentTurn = CustomNetTables.GetTableValue("misc", "current_turn");
         let rollOrder = CustomNetTables.GetTableValue("misc", "roll_order");
+        let currentIndex = Object.values(rollOrder).find(pID => currentTurn.pID === pID);
+        if (!currentIndex) { 
+            throw "Can't find the index :(";
+        }
         print(currentTurn);
         DeepPrintTable(rollOrder);
-        let savedTurn = { index: (currentTurn + 1) % Object.keys(rollOrder).length, pID: rollOrder[tostring((currentTurn + 1) % Object.keys(rollOrder).length)]};
+        let savedTurn: TurnState = { pID: rollOrder[tostring((currentIndex + 1) % Object.keys(rollOrder).length)], type: "transition"};
         DeepPrintTable(savedTurn);
         CustomNetTables.SetTableValue("misc", "current_turn", savedTurn);
         this.StartTurn();

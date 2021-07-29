@@ -105,17 +105,13 @@ interface RailroadDefinition extends BaseDefinition {
     type: "railroad";
     id: RailroadTiles;
     purchasePrice: number;
-    price1: number;
-    price2: number;
-    price3: number;
-    price4: number;
+    prices: number[];
 }
 interface UtilityDefinition extends BaseDefinition {
     type: "utility";
     id: UtilityTiles;
     purchasePrice: number;
-    singleMultiplier: number;
-    monopolyMultiplier: number;
+    multipliers: number[];
 }
 
 interface CardDefinition extends BaseDefinition {
@@ -125,3 +121,27 @@ interface CardDefinition extends BaseDefinition {
 interface MiscDefinition extends BaseDefinition {
     type: "misc";
 }
+
+
+interface BaseState {
+    pID: PlayerID;
+}
+
+interface TransitionTurnState extends BaseState {
+    type: "transition"
+}
+
+interface StartTurnState extends BaseState {
+    type: "start";
+    indicators: Partial<Record<Tiles, number>>;
+}
+interface EndTurnState extends BaseState {
+    type: "endturn"
+}
+interface DiceRollState extends BaseState {
+    type: "diceroll",
+    dice1: number,
+    dice2: number,
+}
+
+type TurnState = TransitionTurnState | StartTurnState | DiceRollState | EndTurnState; 

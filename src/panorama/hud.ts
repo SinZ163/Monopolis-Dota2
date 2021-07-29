@@ -1,23 +1,29 @@
-GameEvents.Subscribe("monopolis_safetoendturn", () => {
-    $("#Endturn").RemoveClass("Hidden");
-    $("#DiceRoll").AddClass("Hidden");
-});
+CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
+    if (key !== "current_turn") return;
+    $.Msg(_, key, value);
 
-GameEvents.Subscribe("monopolis_diceroll", event => {
-    ($("#dice1") as LabelPanel).text = event.dice1.toFixed(0);
-    ($("#dice2") as LabelPanel).text = event.dice2.toFixed(0); 
-    $("#DiceRoll").RemoveClass("Hidden");
-});
+    switch(value.type) {
+        case "diceroll":
+            ($("#dice1") as LabelPanel).text = value.dice1.toFixed(0);
+            ($("#dice2") as LabelPanel).text = value.dice2.toFixed(0); 
+            $("#DiceRoll").RemoveClass("Hidden");
+            break;
 
-GameEvents.Subscribe("monopolis_startturn", () => {
-    $("#RollDiceButton").RemoveClass("Hidden");
-    let moneyContainer = $("#MoneyTable");
-    if (moneyContainer.BHasClass("Hidden")) {
-        for (let row of moneyContainer.Children()) {
-            let pID = row.id.split("_")[1];
-            row.style.backgroundColor = ColorToHexCode2(Players.GetPlayerColor(Number.parseInt(pID) as PlayerID));
-        }
-        moneyContainer.RemoveClass("Hidden");
+        case "start":
+            $("#RollDiceButton").RemoveClass("Hidden");
+            let moneyContainer = $("#MoneyTable");
+            if (moneyContainer.BHasClass("Hidden")) {
+                for (let row of moneyContainer.Children()) {
+                    let pID = row.id.split("_")[1];
+                    row.style.backgroundColor = ColorToHexCode2(Players.GetPlayerColor(Number.parseInt(pID) as PlayerID));
+                }
+                moneyContainer.RemoveClass("Hidden");
+            }
+        break;
+        case "endturn":
+            $("#Endturn").RemoveClass("Hidden");
+            $("#DiceRoll").AddClass("Hidden");
+            break;
     }
 });
 

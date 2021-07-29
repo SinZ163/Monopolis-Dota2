@@ -23,17 +23,17 @@ CustomNetTables.SubscribeNetTableListener("property_ownership", (_, tile, value)
     }
 })
 
-
-GameEvents.Subscribe("monopolis_startturn", event => {
-    if (event.indicators[indicatorname] !== undefined) {
-        $.GetContextPanel().RemoveClass("Hidden");
-        ($("#IndicatorText") as LabelPanel).text = event.indicators[indicatorname]!.toFixed(0);
+CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
+    if (key !== "current_turn") return;
+    if (value.type === "start") {
+        if (value.indicators[indicatorname] !== undefined) {
+            $.GetContextPanel().RemoveClass("Hidden");
+            ($("#IndicatorText") as LabelPanel).text = value.indicators[indicatorname]!.toFixed(0);
+        }
+    } else if (value.type === "endturn") {
+        $.GetContextPanel().AddClass("Hidden");
     }
 });
-GameEvents.Subscribe("monopolis_safetoendturn", () => {
-    $.GetContextPanel().AddClass("Hidden");
-});
-
 
 function ColorToHexCode(color: number) {
 	var red = (color & 0xff).toString(16);
