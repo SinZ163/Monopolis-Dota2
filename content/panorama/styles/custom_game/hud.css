@@ -183,7 +183,13 @@
 
     background-color: black;
     color: white;
+
+    visibility: collapse;
 }
+.diceroll #DiceRoll {
+    visibility: visible;
+}
+
 #dice1 {
     margin-right: 50%;
     font-size: 100;
@@ -195,115 +201,8 @@
     text-align: right;
 }
 
-#Endturn {    
-    width: 500px;
-    height: 100px;
-    vertical-align: bottom;
-    horizontal-align: center;
-    margin-bottom: 20%;
-}
-#Endturn.Disabled .Choice {
-    background-color: gradient( linear, 0% 0%, 0% 100%, from( #5A615E ), to( #879695 ) );
-}
-#Endturn.Disabled .Choice:hover {
-    box-shadow: none;
-}
-.Choice:hover {
-    box-shadow: fill #414f4daa -4px -4px 8px 8px;
-}
-.Choice {
-    vertical-align: bottom;
-    width: 200px;
-    height: 50px;
-
-    background-image: url("s2r://panorama/images/backgrounds/background_play_button_2x_png.vtex");
-    background-size: 328px 50px;
-
-    border-top: 1px solid #ffffff44;
-    border-left: 1px solid #ffffff44;
-    border-bottom: 1px solid #00000088;
-    border-right: 1px solid #00000088;
-}
-.Choice Label {
-    width: 100%;
-    height: 60%;
-    vertical-align: center;
-    color: white;
-    font-size: 26px;
-    text-align: center;
-    font-family: Radiance,FZLanTingHei-R-GBK,TH Sarabun New,YDYGO 540,Gulim,MingLiU;
-}
-#Endturn.Disabled #EndturnSelection {
-    visibility: collapse;
-}
-#Endturn.Active #EndturnSelection {
-    margin-right: 0px;
-    margin-left: -50px;
-    horizontal-align: left;
-    hue-rotation: 220deg;
-    saturation: 2;
-}
-#EndturnSelection {
-    width: 300px;
-    height: 70px;
-
-    margin-bottom: -10px;
-
-    margin-right: -50px;
-    horizontal-align: right;
-    vertical-align: bottom;
-
-    opacity-mask: url("s2r://panorama/images/masks/softedge_box_png.vtex");
-    z-index: -1;
-}
 
 
-#RollDiceChoice {
-    background-color: gradient( linear, 0% 0%, 0% 100%, from( #5Aa15E ), to( #87d695 ) );
-    horizontal-align: right;
-}
-#EndTurnChoice {
-    background-color: gradient( linear, 0% 0%, 0% 100%, from( #722217 ), to( #DD4A29 ) );
-    horizontal-align: left;
-}
-
-
-#RollDiceButton {    
-    width: 500px;
-    height: 100px;
-    vertical-align: bottom;
-    horizontal-align: center;
-    margin-bottom: 20%;
-}
-#RollDiceButton.Disabled .Choice {
-    background-color: gradient( linear, 0% 0%, 0% 100%, from( #5A615E ), to( #879695 ) );
-}
-#RollDiceButton.Disabled .Choice:hover {
-    box-shadow: none;
-}
-#RollDiceButton.Disabled #RollDiceSelection {
-    visibility: collapse;
-}
-#RollDiceButton.Active #RollDiceSelection {
-    margin-right: 0px;
-    margin-left: -50px;
-    horizontal-align: left;
-    hue-rotation: 220deg;
-    saturation: 2;
-}
-#RollDiceSelection {
-    width: 300px;
-    height: 70px;
-
-    margin-bottom: -10px;
-
-    margin-right: -50px;
-    horizontal-align: right;
-    vertical-align: bottom;
-
-    opacity-mask: url("s2r://panorama/images/masks/softedge_box_png.vtex");
-    z-index: -1;
-}
 
 .TileIndicator {
     width: 100%;
@@ -344,7 +243,7 @@
     height: 80px;
     background-color: black;
 }
-.MoneyTalbeRow #Name {
+.MoneyTableRow #Name {
     color: white;
     font-size: 25px;
     margin-top: 10px;

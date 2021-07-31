@@ -449,6 +449,58 @@ export class GameMode {
         );
         CustomGameEventManager.RegisterListener("monopolis_endturn", (user, event) => this.EndTurn(user, event));
         CustomGameEventManager.RegisterListener("monopolis_requestdiceroll", (user, event) => this.RollDice(user, event));
+        CustomGameEventManager.RegisterListener("monopolis_requestpurchase", (user, event) => this.PurchaseProperty(user, event));
+        CustomGameEventManager.RegisterListener("monopolis_requestpayrent", (user, event) => this.PayRent(user, event));
+        CustomGameEventManager.RegisterListener("monopolis_requestauction", (user, event) => this.StartAuction(user, event));
+    }
+    StartAuction(user: EntityIndex, event: { PlayerID: PlayerID; }): void {
+        throw new Error("Method not implemented.");
+    }
+    PayRent(user: EntityIndex, event: { PlayerID: PlayerID; }): void {
+        let current = this.GetCurrentPlayerState();
+        print("Roll Dice", current.pID);
+
+        // Anti Cheat, its just this simple
+        if (!IsInToolsMode() && event.PlayerID !== current.pID) {return;}
+
+        let turnState = CustomNetTables.GetTableValue("misc", "current_turn");
+
+        // this event is only available in payrent state
+        if (turnState.type !== "payrent") return;
+
+        let tile = TilesObj[turnState.property];
+        // need this check because it may be tax which has no owner
+        if (this.IsPurchasableTile(tile)) {
+            let propertyState = CustomNetTables.GetTableValue("property_ownership", tile.id);
+            let owner = CustomNetTables.GetTableValue("player_state", tostring(propertyState.owner));
+            owner.money += turnState.price;
+            CustomNetTables.SetTableValue("player_state", tostring(propertyState.owner), owner);
+        }
+        // TODO tell client they cant go negative
+        current.money -= turnState.price;
+        CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
+        CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "endturn"});
+    }
+    PurchaseProperty(user: EntityIndex, event: { PlayerID: PlayerID; }): void {
+        let current = this.GetCurrentPlayerState();
+        print("Roll Dice", current.pID);
+
+        // Anti Cheat, its just this simple
+        if (!IsInToolsMode() && event.PlayerID !== current.pID) {return;}
+
+        let turnState = CustomNetTables.GetTableValue("misc", "current_turn");
+
+        // this event is only available in payrent state
+        if (turnState.type !== "unowned") return;
+
+        let tile = TilesObj[turnState.property];
+        let propertyState = CustomNetTables.GetTableValue("property_ownership", turnState.property);
+        if (!this.IsPurchasableTile(tile)) return;
+        current.money -= tile.purchasePrice;
+        propertyState.owner = current.pID;
+        CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
+        CustomNetTables.SetTableValue("property_ownership", tile.id, propertyState);
+        CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "endturn"});
     }
 
     private configure(): void {
@@ -703,59 +755,52 @@ export class GameMode {
             // Owned property that isn't current player and it isn't mortgaged (-1)
             if (propertyState.owner > -1 && propertyState.owner !== current.pID && propertyState.houseCount >= 0) {
                 print("Well you need to pay up now");
-                if (tile.type === "property") {
-                    current.money -= tile.rentPrice;
-                    let owner = CustomNetTables.GetTableValue("player_state", tostring(propertyState.owner));
-                    owner.money += tile.rentPrice;
-                    CustomNetTables.SetTableValue("player_state", tostring(owner.pID), owner);
-                }
-                else if (tile.type === "railroad") {
-                    let railroads = [
-                        CustomNetTables.GetTableValue("property_ownership", "railroad1"),
-                        CustomNetTables.GetTableValue("property_ownership", "railroad2"),
-                        CustomNetTables.GetTableValue("property_ownership", "railroad3"),
-                        CustomNetTables.GetTableValue("property_ownership", "railroad4")
-                    ];
-                    let ownedRailroads = railroads.filter(railroad => railroad.owner === propertyState.owner).length;
-                    let price = tile.prices[ownedRailroads - 1];
-                    current.money -= price;
-                    let owner = CustomNetTables.GetTableValue("player_state", tostring(propertyState.owner));
-                    owner.money += price;
-                    CustomNetTables.SetTableValue("player_state", tostring(owner.pID), owner);
-                } else {
-                    let turnState = CustomNetTables.GetTableValue("misc", "current_turn");
-                    if (turnState.type === "diceroll") {
-                        let diceSum = turnState.dice1 + turnState.dice2;
-                        let railroads = [
-                            CustomNetTables.GetTableValue("property_ownership", "utility1"),
-                            CustomNetTables.GetTableValue("property_ownership", "utility2"),
-                        ];
-                        let ownedUtilities = railroads.filter(railroad => railroad.owner === propertyState.owner).length;
-                        let price = tile.multipliers[ownedUtilities - 1] * diceSum;
-                        current.money -= price;
-                        let owner = CustomNetTables.GetTableValue("player_state", tostring(propertyState.owner));
-                        owner.money += price;
-                        CustomNetTables.SetTableValue("player_state", tostring(owner.pID), owner);
-                    } else {
-                        throw "wtf why is it not diceroll state";
-                    }
-                }
+                const price = this.CalculateRent(tile, current, propertyState);
+                CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "payrent", property: tile.id, price});
             }
-            // TODO: Ask user if they want to buy or auction (must select 1 of 2 to continue game)
-            else if (propertyState.owner === -1 && current.money >= tile.purchasePrice) {
-                print("Sold, to the current bidder");
-                propertyState.owner = current.pID;
-                current.money -= tile.purchasePrice;
-                CustomNetTables.SetTableValue("property_ownership", tile.id, propertyState);
+            else if (propertyState.owner === -1) {
+                CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "unowned", property: tile.id});
             }
         } else if (tile.type === "tax") {
-            print("Taxman wants your money");
-            current.money -= tile.cost;
+            CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "payrent", property: tile.id, price: tile.cost});
         } else {
             // TODO: implement chance/communitybreast/etc
+            CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
+            CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID})
         }
-        CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
-        CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID})
+    }
+
+    public CalculateRent(tile: PropertyDefinition | UtilityDefinition | RailroadDefinition, current: PlayerState, propertyState: PropertyOwnership): number {
+        if (propertyState.houseCount === -1) { 
+            return 0;
+        }
+        if (tile.type === "property") {
+            // TODO: monopoly, houses etc
+            return tile.rentPrice;
+        }
+        else if (tile.type === "railroad") {
+            let railroads = [
+                CustomNetTables.GetTableValue("property_ownership", "railroad1"),
+                CustomNetTables.GetTableValue("property_ownership", "railroad2"),
+                CustomNetTables.GetTableValue("property_ownership", "railroad3"),
+                CustomNetTables.GetTableValue("property_ownership", "railroad4")
+            ];
+            let ownedRailroads = railroads.filter(railroad => railroad.owner === propertyState.owner).length;
+            return tile.prices[ownedRailroads - 1];
+        } else {
+            let turnState = CustomNetTables.GetTableValue("misc", "current_turn");
+            if (turnState.type === "diceroll") {
+                let diceSum = turnState.dice1 + turnState.dice2;
+                let railroads = [
+                    CustomNetTables.GetTableValue("property_ownership", "utility1"),
+                    CustomNetTables.GetTableValue("property_ownership", "utility2"),
+                ];
+                let ownedUtilities = railroads.filter(railroad => railroad.owner === propertyState.owner).length;
+                return tile.multipliers[ownedUtilities - 1] * diceSum;
+            } else {
+                throw "wtf why is it not diceroll state";
+            }
+        }
     }
 
     public EndTurn(userId: EntityIndex, event: { PlayerID: PlayerID }) {

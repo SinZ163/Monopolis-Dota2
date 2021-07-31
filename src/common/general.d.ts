@@ -60,10 +60,13 @@ type PurchasableTiles =
 |    RailroadTiles
 |    UtilityTiles;
 
-type PricedTiles = 
-| PurchasableTiles
+type TaxTiles = 
 |    "tax1"
 |    "tax2";
+
+type PricedTiles = 
+| PurchasableTiles
+| TaxTiles;
 
 type Tiles = 
 | PricedTiles
@@ -99,6 +102,7 @@ interface PropertyDefinition extends BaseDefinition {
 }
 interface TaxDefinition extends BaseDefinition {
     type: "tax";
+    id: TaxTiles;
     cost: number;
 }
 interface RailroadDefinition extends BaseDefinition {
@@ -143,5 +147,14 @@ interface DiceRollState extends BaseState {
     dice1: number,
     dice2: number,
 }
+interface PayRentState extends BaseState {
+    type: "payrent";
+    property: PricedTiles;
+    price: number;
+}
+interface UnOwnedState extends BaseState {
+    type: "unowned";
+    property: PurchasableTiles;
+}
 
-type TurnState = TransitionTurnState | StartTurnState | DiceRollState | EndTurnState; 
+type TurnState = TransitionTurnState | StartTurnState | DiceRollState | PayRentState | UnOwnedState | EndTurnState; 

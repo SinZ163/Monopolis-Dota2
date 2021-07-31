@@ -1,0 +1,76 @@
+#BottomBar {
+    width: 40%;
+    height: 20%;
+    vertical-align: bottom;
+    horizontal-align: center;
+    margin-bottom: 20%;
+
+    flow-children: right;
+}
+
+.start #RollDiceButton,
+.endturn #EndturnButton,
+.unowned #BuyPropertyButton,
+.unowned #AuctionButton,
+.payrent #PayRentButton {
+    visibility: visible;
+}
+
+.green Button {
+    background-color: gradient( linear, 0% 0%, 0% 100%, from( #5Aa15E ), to( #87d695 ) );
+}
+.red Button {
+    background-color: gradient( linear, 0% 0%, 0% 100%, from( #722217 ), to( #DD4A29 ) );
+}
+
+
+.ButtonContainer {    
+    width: fit-children;
+    height: 100px;
+    visibility: collapse;
+}
+.ButtonContainer.red .ButtonBackground {
+    hue-rotation: 220deg;
+    saturation: 2;
+}
+.ButtonBackground {
+    width: 300px;
+    height: 70px;
+
+    margin-bottom: -10px;
+    vertical-align: center;
+
+    opacity-mask: url("s2r://panorama/images/masks/softedge_box_png.vtex");
+    z-index: -1;
+}
+
+.Choice:hover {
+    box-shadow: fill #414f4daa -4px -4px 8px 8px;
+}
+.Choice {
+    width: fit-children;
+    height: 50px;
+
+    padding-left: 30px;
+    padding-right: 30px;
+
+    vertical-align: center;
+    horizontal-align: center;
+
+    background-image: url("s2r://panorama/images/backgrounds/background_play_button_2x_png.vtex");
+    background-size: 328px 50px;
+
+    border-top: 1px solid #ffffff44;
+    border-left: 1px solid #ffffff44;
+    border-bottom: 1px solid #00000088;
+    border-right: 1px solid #00000088;
+}
+.Choice Label {
+    width: fit-children;
+    height: 60%;
+    vertical-align: center;
+    color: white;
+    font-size: 26px;
+    text-align: center;
+    font-family: Radiance,FZLanTingHei-R-GBK,TH Sarabun New,YDYGO 540,Gulim,MingLiU;
+}

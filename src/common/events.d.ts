@@ -13,8 +13,16 @@
 
 // To declare an event for use, add it to this table with the type of its data
 interface CustomGameEventDeclarations {
+    // Sent at start of game
     monopolis_price_definitions: Record<Tiles, SpaceDefinition>, // S-->C
+    // Available in state start
     monopolis_requestdiceroll: MonopolisEmptyEvent, //C-->S
+    // Available in state payrent
+    monopolis_requestpayrent: MonopolisEmptyEvent, //C-->S
+    // Available in state unowned
+    monopolis_requestauction: MonopolisEmptyEvent, //C-->S
+    monopolis_requestpurchase: MonopolisEmptyEvent, //C-->S
+    // Available in state endturn
     monopolis_endturn: MonopolisEmptyEvent, //C-->S
 }
 

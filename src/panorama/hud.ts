@@ -1,16 +1,26 @@
+let currentState: string|undefined = undefined;
+
 CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
     if (key !== "current_turn") return;
-    $.Msg(_, key, value);
+    $.Msg(_, "|", key, "|", value);
+    $.Msg(currentState, "|", value.type);
+
+    if (currentState) {
+        $.GetContextPanel().SetHasClass(currentState, false);
+    }
+    
+    // Why does TS think value.type is sometimes a number, nani
+    if (typeof(value.type) === "number") return;
+    $.GetContextPanel().SetHasClass(value.type, true);
+    currentState = value.type;
 
     switch(value.type) {
         case "diceroll":
             ($("#dice1") as LabelPanel).text = value.dice1.toFixed(0);
-            ($("#dice2") as LabelPanel).text = value.dice2.toFixed(0); 
-            $("#DiceRoll").RemoveClass("Hidden");
+            ($("#dice2") as LabelPanel).text = value.dice2.toFixed(0);
             break;
 
         case "start":
-            $("#RollDiceButton").RemoveClass("Hidden");
             let moneyContainer = $("#MoneyTable");
             if (moneyContainer.BHasClass("Hidden")) {
                 for (let row of moneyContainer.Children()) {
@@ -19,21 +29,32 @@ CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
                 }
                 moneyContainer.RemoveClass("Hidden");
             }
-        break;
-        case "endturn":
-            $("#Endturn").RemoveClass("Hidden");
-            $("#DiceRoll").AddClass("Hidden");
+            break;
+        case "unowned":
+            $("#buypropertyLabel").SetDialogVariableLocString("property", `#tile_${value.property}`);
+            break;
+        case "payrent":
+            $("#payrentLabel").SetDialogVariableInt("price", value.price);
             break;
     }
 });
 
 function RollDice() {
-    $("#RollDiceButton").AddClass("Hidden");
     GameEvents.SendCustomGameEventToServer("monopolis_requestdiceroll", {});
 }
 
+function BuyProperty() {
+    GameEvents.SendCustomGameEventToServer("monopolis_requestpurchase", {});
+}
+function Auction() {
+    GameEvents.SendCustomGameEventToServer("monopolis_requestauction", {});
+}
+
+function PayRent() {
+    GameEvents.SendCustomGameEventToServer("monopolis_requestpayrent", {});
+}
+
 function Endturn() {
-    $("#Endturn").AddClass("Hidden");
     GameEvents.SendCustomGameEventToServer("monopolis_endturn", {});
 }
 
