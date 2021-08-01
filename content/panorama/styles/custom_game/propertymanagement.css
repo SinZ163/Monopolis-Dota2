@@ -1,0 +1,61 @@
+#PropertyManagement {
+    vertical-align: center;
+    horizontal-align: right;
+
+    width: 500px;
+    height: 800px;
+
+    flow-children: down;
+
+    background-color: black;
+}
+
+.PropertyManagementRow {
+    flow-children: right;
+}
+
+#PropertyName {
+    width: 420px;
+    font-size: 30;
+}
+
+#BuyHouse {
+    background-color: green;
+}
+#SellHouse {
+    background-color: red;
+}
+
+#BuyHouse,
+#SellHouse {
+    border-width: 1px;
+    border-color: grey;
+    border-style: solid;
+    width: 40px;
+    height: 40px;
+}
+#BuyHouse Label,
+#SellHouse Label {
+    horizontal-align: center;
+    vertical-align: center;
+}
+
+
+.Owner_-1,
+.Owner_0,
+.Owner_1,
+.Owner_2,
+.Owner_3,
+.Owner_4,
+.Owner_5 {
+    visibility: collapse;
+}
+
+.Turn_0 .Owner_0,
+.Turn_1 .Owner_1,
+.Turn_2 .Owner_2,
+.Turn_3 .Owner_3,
+.Turn_4 .Owner_4,
+.Turn_5 .Owner_5 {
+    visibility: visible;
+}

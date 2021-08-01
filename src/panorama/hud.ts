@@ -1,25 +1,33 @@
-let currentState: string|undefined = undefined;
-
 CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
     if (key !== "current_turn") return;
+    let currentState = $.GetContextPanel().GetAttributeString("currentstate", "undefined");
     $.Msg(_, "|", key, "|", value);
     $.Msg(currentState, "|", value.type);
 
-    if (currentState) {
-        $.GetContextPanel().SetHasClass(currentState, false);
+    if (currentState !== "undefined") {
+        $.GetContextPanel().RemoveClass(currentState);
     }
     
     // Why does TS think value.type is sometimes a number, nani
-    if (typeof(value.type) === "number") return;
-    $.GetContextPanel().SetHasClass(value.type, true);
-    currentState = value.type;
+    if (typeof(value.type) === "number") {
+        $.Msg("WARNING: Value.type is a number: ", key, "|", value);
+        return;
+    };
+    $.GetContextPanel().AddClass(value.type);
+    $.GetContextPanel().SetAttributeString("currentstate", value.type);
+
+    let currentTurn = $.GetContextPanel().GetAttributeInt("currentturn", -1);
+    if (value.pID !== currentTurn) {
+        $.GetContextPanel().RemoveClass(`Turn_${currentTurn}`);
+        $.GetContextPanel().AddClass(`Turn_${value.pID}`);
+        $.GetContextPanel().SetAttributeInt("currentturn", value.pID);
+    }
 
     switch(value.type) {
         case "diceroll":
             ($("#dice1") as LabelPanel).text = value.dice1.toFixed(0);
             ($("#dice2") as LabelPanel).text = value.dice2.toFixed(0);
             break;
-
         case "start":
             let moneyContainer = $("#MoneyTable");
             if (moneyContainer.BHasClass("Hidden")) {
@@ -72,6 +80,33 @@ CustomNetTables.SubscribeNetTableListener("player_state", (_, pID, state) => {
     (existingPanel.FindChildTraverse("GoldAmount") as LabelPanel).text = state.money.toFixed(0);
         existingPanel.style.backgroundColor = ColorToHexCode2(Players.GetPlayerColor(Number.parseInt(pID) as PlayerID));
 });
+
+
+function AddHouse(tile: PurchasableTiles) {
+    $.Msg("Adding house to ", tile);
+}
+function RemoveHouse(tile: PurchasableTiles) {
+    $.Msg("Removing house from ", tile);
+}
+
+
+CustomNetTables.SubscribeNetTableListener("property_ownership", (_, tile, value) => {
+    let existingPanel = $(`#PropertyManagement_${tile}`);
+    if (!existingPanel) {
+        existingPanel = $.CreatePanel("Panel", $("#PropertyManagement"), `PropertyManagement_${tile}`);
+        existingPanel.BLoadLayoutSnippet("PropertyManagementRow");
+        (existingPanel.FindChildTraverse("PropertyName") as LabelPanel).text = $.Localize(`#tile_${tile}`);
+        existingPanel.FindChildTraverse("BuyHouse")?.SetPanelEvent("onactivate", () => AddHouse(tile));
+        existingPanel.FindChildTraverse("SellHouse")?.SetPanelEvent("onactivate", () => RemoveHouse(tile));
+    }
+    // default to -2 so the -1's coming in from unowned cause the handler to run
+    let currentOwner = existingPanel.GetAttributeInt("current_owner", -2);
+    if (value.owner !== currentOwner) {
+        existingPanel.RemoveClass(`Owner_${currentOwner}`);
+        existingPanel.AddClass(`Owner_${value.owner}`);
+        existingPanel.SetAttributeInt("current_owner", value.owner);
+    }
+})
 
 
 function ColorToHexCode2(color: number) {

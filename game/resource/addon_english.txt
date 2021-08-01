@@ -62,5 +62,15 @@
 
         "jail_above" ""
         "jail_below" "JAIL"
+
+        "auction" "Auction"
+        "buyproperty" "Buy Property"
+        "endturn" "End turn"
+        "rolldice" "Roll Dice"
+
+        "buyproperty" "Buy {s:property}"
+
+
+        "payrent" "Pay {d:price}"
     }
 }
