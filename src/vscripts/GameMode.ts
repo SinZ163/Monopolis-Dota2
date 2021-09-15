@@ -450,8 +450,38 @@ export class GameMode {
         CustomGameEventManager.RegisterListener("monopolis_endturn", (user, event) => this.EndTurn(user, event));
         CustomGameEventManager.RegisterListener("monopolis_requestdiceroll", (user, event) => this.RollDice(user, event));
         CustomGameEventManager.RegisterListener("monopolis_requestpurchase", (user, event) => this.PurchaseProperty(user, event));
+        CustomGameEventManager.RegisterListener("monopolis_requestrenovation", (user, event) => this.ApplyRenovation(user, event));
         CustomGameEventManager.RegisterListener("monopolis_requestpayrent", (user, event) => this.PayRent(user, event));
         CustomGameEventManager.RegisterListener("monopolis_requestauction", (user, event) => this.StartAuction(user, event));
+    }
+    ApplyRenovation(user: EntityIndex, event: { property: PurchasableTiles; houseCount: number; PlayerID: PlayerID; }): void {
+        let current = this.GetCurrentPlayerState();
+        if (!IsInToolsMode() && event.PlayerID !== current.pID) {return;}
+
+        let tile = TilesObj[event.property] as PropertyDefinition;
+        let propertyState = CustomNetTables.GetTableValue("property_ownership", tile.id);
+
+        // Asserts its ownable and if it is, its the current player
+        if (propertyState?.owner !== current.pID) { return; }
+
+        if (propertyState.houseCount === 0) {
+            if (event.houseCount === -1) {
+                // 0 => -1, we are mortgaging and need to grant money
+                current.money += tile.purchasePrice / 2;
+                propertyState.houseCount = -1;
+                CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
+                CustomNetTables.SetTableValue("property_ownership", tile.id, propertyState);
+            }
+        } else if (propertyState.houseCount === -1) {
+            if (event.houseCount === 0) {
+                // -1 => 0, we are unmortgaging and should take the money + 10% fee
+                // TODO: Error if the user is poor
+                current.money -= (tile.purchasePrice / 2) * 1.10;
+                propertyState.houseCount = 0;
+                CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
+                CustomNetTables.SetTableValue("property_ownership", tile.id, propertyState);
+            }
+        }
     }
     StartAuction(user: EntityIndex, event: { PlayerID: PlayerID; }): void {
         throw new Error("Method not implemented.");
@@ -760,6 +790,9 @@ export class GameMode {
             }
             else if (propertyState.owner === -1) {
                 CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "unowned", property: tile.id});
+            } else {
+                // owner exists but either current player owns it or its mortgaged. skip to endturn state
+                CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID});
             }
         } else if (tile.type === "tax") {
             CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "payrent", property: tile.id, price: tile.cost});

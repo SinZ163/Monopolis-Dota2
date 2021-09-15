@@ -84,9 +84,17 @@ CustomNetTables.SubscribeNetTableListener("player_state", (_, pID, state) => {
 
 function AddHouse(tile: PurchasableTiles) {
     $.Msg("Adding house to ", tile);
+    let property = CustomNetTables.GetAllTableValues("property_ownership").find(kv => kv.key === tile)?.value;
+    if (!property) return;
+    if (property.houseCount > 5) return
+    GameEvents.SendCustomGameEventToServer("monopolis_requestrenovation", {property: tile, houseCount: property.houseCount + 1});
 }
 function RemoveHouse(tile: PurchasableTiles) {
     $.Msg("Removing house from ", tile);
+    let property = CustomNetTables.GetAllTableValues("property_ownership").find(kv => kv.key === tile)?.value;
+    if (!property) return;
+    if (property.houseCount < -1) return
+    GameEvents.SendCustomGameEventToServer("monopolis_requestrenovation", {property: tile, houseCount: property.houseCount - 1});
 }
 
 
@@ -106,6 +114,9 @@ CustomNetTables.SubscribeNetTableListener("property_ownership", (_, tile, value)
         existingPanel.AddClass(`Owner_${value.owner}`);
         existingPanel.SetAttributeInt("current_owner", value.owner);
     }
+    // TODO: Proper naming convention for houses / hotels
+    // TODO: Block + and - buttons in correct conditions
+    (existingPanel.FindChildTraverse("PropertyStatus") as LabelPanel).text = `${value.houseCount === -1 ? "Mortgaged" : "Owned"}`;
 })
 
 

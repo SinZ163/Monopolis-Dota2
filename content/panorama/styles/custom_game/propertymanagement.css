@@ -15,14 +15,23 @@
 }
 
 #PropertyName {
-    width: 420px;
+    width: 300px;
     font-size: 30;
+}
+#PropertyStatus {
+    width: 120px;
+    font-size: 25;
+    text-align: center;
+    vertical-align: center;
+    text-overflow: clip;
 }
 
 #BuyHouse {
+    horizontal-align: right;
     background-color: green;
 }
 #SellHouse {
+    horizontal-align: right;
     background-color: red;
 }
 

@@ -22,6 +22,7 @@ interface CustomGameEventDeclarations {
     // Available in state unowned
     monopolis_requestauction: MonopolisEmptyEvent, //C-->S
     monopolis_requestpurchase: MonopolisEmptyEvent, //C-->S
+    monopolis_requestrenovation: MonopolisRenovationEvent,  //C-->S
     // Available in state endturn
     monopolis_endturn: MonopolisEmptyEvent, //C-->S
 }
@@ -56,4 +57,9 @@ interface MonopolisDiceRoll {
 
 interface MonopolisStartTurn {
     indicators: Partial<Record<Tiles, number>>;
+}
+
+interface MonopolisRenovationEvent {
+    property: PurchasableTiles;
+    houseCount: number;
 }

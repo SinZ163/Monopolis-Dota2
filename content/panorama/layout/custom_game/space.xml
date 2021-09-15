@@ -14,12 +14,12 @@
         <!-- Snippets go here -->
     </snippets>
 
-    <ClientUIDialogPanel  hittest="false" class="MainSpace">
-        <Panel id="ExampleSpace">
+    <ClientUIDialogPanel class="MainSpace">
+        <Panel id="ExampleSpace" onactivate="OnClick()">
             <Panel id="HouseBox" />
 
             <Label id="SpaceName" text="WHITECHAPEL ROAD" />
-
+            
             <Panel id="PriceContainer">
                 <Panel id="GoldIcon" />
                 <Label id="SpacePrice" text="420" />

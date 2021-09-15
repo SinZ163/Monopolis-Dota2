@@ -9,6 +9,7 @@
         <include src="s2r://panorama/styles/dotastyles.css" />
         <include src="file://{resources}/styles/custom_game/hud.css" />
         <include src="file://{resources}/styles/custom_game/bottombar.css" />
+        <include src="file://{resources}/styles/custom_game/propertymanagement.css" />
     </styles>
 
     <snippets>
@@ -20,39 +21,51 @@
                 <Label id="GoldAmount" hittest="false" />
             </Panel>
         </snippet>
+        <snippet name="PropertyManagementRow">
+            <Panel class="PropertyManagementRow">
+                <Label id="PropertyName" />
+                <Label id="PropertyStatus" />
+                <Button id="BuyHouse">
+                    <Label text="+" />
+                </Button>
+                <Button id="SellHouse">
+                    <Label text="-" />
+                </Button>
+            </Panel>
+        </snippet>
     </snippets>
 
     <Panel hittest="false" class="MainHud">
-        <Panel id="DiceRoll">
+        <Panel id="DiceRoll" class="OnDiceroll">
             <Label id="dice1" text="-1" />
             <Label id="dice2" text="-1" />
         </Panel>
         <Panel id="BottomBar">
-            <Panel id="RollDiceButton" class="ButtonContainer green">
+            <Panel id="RollDiceButton" class="ButtonContainer green OnStart">
                 <Button class="Choice" onactivate="RollDice()">
                     <Label text="#rolldice" />
                 </Button>
                 <DOTAScenePanel class="ButtonBackground" map="backgrounds/accept_popup_test" camera="shot_camera" />
             </Panel>
-            <Panel id="BuyPropertyButton" class="ButtonContainer green">
+            <Panel id="BuyPropertyButton" class="ButtonContainer green OnUnowned">
                 <Button class="Choice" onactivate="BuyProperty()">
                     <Label id="buypropertyLabel" text="#buyproperty" />
                 </Button>
                 <DOTAScenePanel class="ButtonBackground" map="backgrounds/accept_popup_test" camera="shot_camera" />
             </Panel>
-            <Panel id="AuctionButton" class="ButtonContainer red">
+            <Panel id="AuctionButton" class="ButtonContainer red OnUnowned">
                 <Button class="Choice" onactivate="Auction()">
                     <Label text="#auction" />
                 </Button>
                 <DOTAScenePanel class="ButtonBackground" map="backgrounds/accept_popup_test" camera="shot_camera" />
             </Panel>
-            <Panel id="PayRentButton" class="ButtonContainer red">
+            <Panel id="PayRentButton" class="ButtonContainer red OnPayrent">
                 <Button class="Choice" onactivate="PayRent()">
                     <Label id="payrentLabel" text="#payrent" />
                 </Button>
                 <DOTAScenePanel class="ButtonBackground" map="backgrounds/accept_popup_test" camera="shot_camera" />
             </Panel>
-            <Panel id="EndturnButton" class="ButtonContainer red">
+            <Panel id="EndturnButton" class="ButtonContainer red OnEndturn">
                 <Button class="Choice" onactivate="Endturn()">
                     <Label text="#endturn" />
                 </Button>
@@ -60,5 +73,6 @@
             </Panel>
         </Panel>
         <Panel id="MoneyTable" />
+        <Panel id="PropertyManagement" class="OnEndturn" />
     </Panel>
 </root>

@@ -8,14 +8,6 @@
     flow-children: right;
 }
 
-.start #RollDiceButton,
-.endturn #EndturnButton,
-.unowned #BuyPropertyButton,
-.unowned #AuctionButton,
-.payrent #PayRentButton {
-    visibility: visible;
-}
-
 .green Button {
     background-color: gradient( linear, 0% 0%, 0% 100%, from( #5Aa15E ), to( #87d695 ) );
 }
@@ -27,7 +19,6 @@
 .ButtonContainer {    
     width: fit-children;
     height: 100px;
-    visibility: collapse;
 }
 .ButtonContainer.red .ButtonBackground {
     hue-rotation: 220deg;

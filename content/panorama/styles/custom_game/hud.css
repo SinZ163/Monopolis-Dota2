@@ -183,11 +183,6 @@
 
     background-color: black;
     color: white;
-
-    visibility: collapse;
-}
-.diceroll #DiceRoll {
-    visibility: visible;
 }
 
 #dice1 {
@@ -248,4 +243,19 @@
     font-size: 25px;
     margin-top: 10px;
     margin-left: 90px;
+}
+
+.OnStart,
+.OnDiceroll,
+.OnUnowned,
+.OnEndturn,
+.OnPayrent {
+    visibility: collapse;
+}
+.start .OnStart,
+.diceroll .OnDiceroll,
+.unowned .OnUnowned,
+.endturn .OnEndturn,
+.payrent .OnPayrent {
+    visibility: visible;
 }

@@ -14,7 +14,7 @@
         <!-- Snippets go here -->
     </snippets>
 
-    <ClientUIDialogPanel  hittest="false" class="ImageSpace">
+    <ClientUIDialogPanel class="ImageSpace" onactivate="OnClick()">
         <Panel id="ExampleSpace">
 
             <Label id="SpaceName" text="WHITECHAPEL ROAD" />
