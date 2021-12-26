@@ -129,10 +129,11 @@ interface MiscDefinition extends BaseDefinition {
 
 interface BaseState {
     pID: PlayerID;
+    rolls: Array<{dice1: number, dice2: number}>,
 }
 
 interface TransitionTurnState extends BaseState {
-    type: "transition"
+    type: "transition";
 }
 
 interface StartTurnState extends BaseState {
@@ -140,12 +141,12 @@ interface StartTurnState extends BaseState {
     indicators: Partial<Record<Tiles, number>>;
 }
 interface EndTurnState extends BaseState {
-    type: "endturn"
+    type: "endturn";
 }
 interface DiceRollState extends BaseState {
-    type: "diceroll",
-    dice1: number,
-    dice2: number,
+    type: "diceroll";
+    dice1: number;
+    dice2: number;
 }
 interface PayRentState extends BaseState {
     type: "payrent";

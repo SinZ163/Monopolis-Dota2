@@ -1,4 +1,4 @@
-import { reloadable } from "./lib/tstl-utils";
+import { reloadable, toArray } from "./lib/tstl-utils";
 import { modifier_movetotile } from "./modifiers/modifier_movetotile";
 import { modifier_vision } from "./modifiers/modifier_vision";
 
@@ -509,7 +509,7 @@ export class GameMode {
         // TODO tell client they cant go negative
         current.money -= turnState.price;
         CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
-        CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "endturn"});
+        CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, rolls: current.turnState.rolls, type: "endturn"});
     }
     PurchaseProperty(user: EntityIndex, event: { PlayerID: PlayerID; }): void {
         let current = this.GetCurrentPlayerState();
@@ -530,7 +530,7 @@ export class GameMode {
         propertyState.owner = current.pID;
         CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
         CustomNetTables.SetTableValue("property_ownership", tile.id, propertyState);
-        CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "endturn"});
+        CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, rolls: current.turnState.rolls, type: "endturn"});
     }
 
     private configure(): void {
@@ -609,7 +609,7 @@ export class GameMode {
                 });
             }
         }
-        CustomNetTables.SetTableValue("misc", "current_turn", {pID: 0, type: "transition"});
+        CustomNetTables.SetTableValue("misc", "current_turn", {pID: 0, rolls: [], type: "transition"});
         let rollOrder: Record<string, PlayerID> = {};
         for (let i = 0; i < DOTA_MAX_PLAYERS; i++) {
             if (PlayerResource.IsValidPlayer(i)) {
@@ -652,7 +652,9 @@ export class GameMode {
     }
 
     public GetCurrentPlayerState() {
-        return CustomNetTables.GetTableValue("player_state", tostring(CustomNetTables.GetTableValue("misc", "current_turn").pID));
+        const turnState = CustomNetTables.GetTableValue("misc", "current_turn");
+        const playerState = CustomNetTables.GetTableValue("player_state", tostring(turnState.pID));
+        return {...playerState, turnState: {...turnState, rolls: toArray(turnState.rolls)}};
     }
 
     public StartTurn() {
@@ -693,7 +695,7 @@ export class GameMode {
             let indicatorSpot = (current.location + i) % 40;
             indicators[TilesReverseLookup[indicatorSpot]] = i;
         }
-        CustomNetTables.SetTableValue("misc", "current_turn", {type: "start", pID: current.pID, indicators});
+        CustomNetTables.SetTableValue("misc", "current_turn", {type: "start", pID: current.pID, rolls: current.turnState.rolls, indicators});
     }
     public RollDice(userId: EntityIndex, event: { PlayerID: PlayerID}) {
         let current = this.GetCurrentPlayerState();
@@ -716,68 +718,78 @@ export class GameMode {
 
         let dice1 = RandomInt(1, 6);
         let dice2 = RandomInt(1, 6);
+        current.turnState.rolls = [...current.turnState.rolls, {dice1,dice2}];
         let turnState: TurnState = {
             pID: current.pID,
             type: "diceroll",
+            rolls: current.turnState.rolls,
             dice1,
             dice2,
         }
         CustomNetTables.SetTableValue("misc", "current_turn", turnState);
+        DeepPrintTable(turnState.rolls);
 
         // TODO: Doubles logic
         print(dice1, dice2);
-        let futureLocation = (current.location + dice1 + dice2) % 40;
+        if (dice1 === dice2 && turnState.rolls.length >= 3) {
+            // TODO: Make teleport pretty
+            FindClearSpaceForUnit(currentHero, Vector(10 * 400, 0), true);
+            CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID, rolls: current.turnState.rolls});
+        } else {
+            let futureLocation = (current.location + dice1 + dice2) % 40;
 
-        let position = currentHero.GetAbsOrigin();
-        let firstMovement = true;
-        do {
-            let futureSide = math.floor(futureLocation / 10);
-            let currentSide = math.floor(current.location / 10);
-
-            let currentDelta = current.location % 10;
-            let futureDelta = futureLocation % 10;
-
-            let rowAmount: number;
-            if (currentSide === futureSide) {
-                rowAmount = futureDelta - currentDelta;
-            } else {
-                rowAmount = 10 - currentDelta;
+            let position = currentHero.GetAbsOrigin();
+            let firstMovement = true;
+            do {
+                let futureSide = math.floor(futureLocation / 10);
+                let currentSide = math.floor(current.location / 10);
+    
+                let currentDelta = current.location % 10;
+                let futureDelta = futureLocation % 10;
+    
+                let rowAmount: number;
+                if (currentSide === futureSide) {
+                    rowAmount = futureDelta - currentDelta;
+                } else {
+                    rowAmount = 10 - currentDelta;
+                }
+                let sameSideVector: Vector;
+                if (currentSide === 0) {
+                    sameSideVector = Vector(rowAmount * -400, 0, 0);
+                } else if (currentSide === 1) {
+                    sameSideVector = Vector(0, rowAmount * 400, 0);
+                } else if (currentSide === 2) {
+                    sameSideVector = Vector(rowAmount * 400, 0, 0);
+                } else {
+                    sameSideVector = Vector(0, rowAmount * -400, 0);
+                }
+                position = (position + sameSideVector) as Vector;
+                print("Pre Order", firstMovement);
+                ExecuteOrderFromTable({
+                    OrderType: UnitOrder.MOVE_TO_POSITION,
+                    UnitIndex: currentHero.GetEntityIndex(),
+                    Position: position,
+                    Queue: !firstMovement,
+                });
+                print("Post Order", firstMovement);
+                current.location = (current.location + rowAmount) % 40;
+                firstMovement = false;
+                print(current.location, futureLocation);
+            } while (current.location !== futureLocation);
+            CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
+            let futureTile = Entities.FindByName(undefined, TilesReverseLookup[futureLocation]);
+            if (!futureTile) {
+                print("Warning: future location tile is missing? wtf");
+                return;
             }
-            let sameSideVector: Vector;
-            if (currentSide === 0) {
-                sameSideVector = Vector(rowAmount * -400, 0, 0);
-            } else if (currentSide === 1) {
-                sameSideVector = Vector(0, rowAmount * 400, 0);
-            } else if (currentSide === 2) {
-                sameSideVector = Vector(rowAmount * 400, 0, 0);
-            } else {
-                sameSideVector = Vector(0, rowAmount * -400, 0);
-            }
-            position = (position + sameSideVector) as Vector;
-            print("Pre Order", firstMovement);
-            ExecuteOrderFromTable({
-                OrderType: UnitOrder.MOVE_TO_POSITION,
-                UnitIndex: currentHero.GetEntityIndex(),
-                Position: position,
-                Queue: !firstMovement,
-            });
-            print("Post Order", firstMovement);
-            current.location = (current.location + rowAmount) % 40;
-            firstMovement = false;
-            print(current.location, futureLocation);
-        } while (current.location !== futureLocation);
-        CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
-        let futureTile = Entities.FindByName(undefined, TilesReverseLookup[futureLocation]);
-        if (!futureTile) {
-            print("Warning: future location tile is missing? wtf");
-            return;
+            CreateModifierThinker(currentHero, undefined, modifier_movetotile.name, { duration: -1}, position, currentHero.GetTeam(), false);
         }
-        CreateModifierThinker(currentHero, undefined, modifier_movetotile.name, { duration: -1}, position, currentHero.GetTeam(), false);
     }
     public FoundHero() {
         let current = this.GetCurrentPlayerState();
         let property = TilesReverseLookup[current.location];
         let tile = TilesObj[property];
+        print("Found hero");
         DeepPrintTable(current);
         print(property);
         if (this.IsPurchasableTile(tile)) {
@@ -786,20 +798,20 @@ export class GameMode {
             if (propertyState.owner > -1 && propertyState.owner !== current.pID && propertyState.houseCount >= 0) {
                 print("Well you need to pay up now");
                 const price = this.CalculateRent(tile, current, propertyState);
-                CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "payrent", property: tile.id, price});
+                CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "payrent", rolls: current.turnState.rolls, property: tile.id, price});
             }
             else if (propertyState.owner === -1) {
-                CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "unowned", property: tile.id});
+                CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "unowned", rolls: current.turnState.rolls, property: tile.id});
             } else {
                 // owner exists but either current player owns it or its mortgaged. skip to endturn state
-                CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID});
+                CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID, rolls: current.turnState.rolls});
             }
         } else if (tile.type === "tax") {
-            CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "payrent", property: tile.id, price: tile.cost});
+            CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "payrent", rolls: current.turnState.rolls, property: tile.id, price: tile.cost});
         } else {
             // TODO: implement chance/communitybreast/etc
             CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
-            CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID})
+            CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID, rolls: current.turnState.rolls})
         }
     }
 
@@ -850,35 +862,54 @@ export class GameMode {
         }
         let currentHero = currentPlayer.GetAssignedHero();
 
-        let currentTile = Entities.FindByName(undefined, TilesReverseLookup[current.location]);
-        if (!currentTile) {
-            print(`Unable to find entity for tile ${TilesReverseLookup[current.location]} on location ${current.location}`);
-            return;
+        let endturn = true;
+        if (current.turnState.rolls.length > 0 && current.turnState.rolls.length < 3) {
+            let diceRolls = current.turnState.rolls[current.turnState.rolls.length - 1];
+            if (diceRolls.dice1 === diceRolls.dice2) {
+                print("End turn bypassed by doubles?");
+                endturn = false;
+            }
         }
-        let offsetVector: Vector;
-        if (current.location < 10) {
-            offsetVector = Vector(100, 100);
-        } else if (current.location < 20) {
-            offsetVector = Vector(100, -100);
-        } else if (current.location < 30) {
-            offsetVector = Vector(-100, -100);
+        if (endturn) {
+            let currentTile = Entities.FindByName(undefined, TilesReverseLookup[current.location]);
+            if (!currentTile) {
+                print(`Unable to find entity for tile ${TilesReverseLookup[current.location]} on location ${current.location}`);
+                return;
+            }
+            let offsetVector: Vector;
+            if (current.location < 10) {
+                offsetVector = Vector(100, 100);
+            } else if (current.location < 20) {
+                offsetVector = Vector(100, -100);
+            } else if (current.location < 30) {
+                offsetVector = Vector(-100, -100);
+            } else {
+                offsetVector = Vector(-100, 100);
+            }
+            currentHero.MoveToPosition((currentTile.GetAbsOrigin() + offsetVector) as Vector);
+    
+            let currentTurn = CustomNetTables.GetTableValue("misc", "current_turn");
+            let rollOrder = CustomNetTables.GetTableValue("misc", "roll_order");
+            let currentIndex = Object.values(rollOrder).find(pID => currentTurn.pID === pID);
+            if (!currentIndex) { 
+                throw "Can't find the index :(";
+            }
+            print(currentTurn);
+            DeepPrintTable(rollOrder);
+            let savedTurn: TurnState = { pID: rollOrder[tostring((currentIndex + 1) % Object.keys(rollOrder).length)], rolls: [], type: "transition"};
+            DeepPrintTable(savedTurn);
+            CustomNetTables.SetTableValue("misc", "current_turn", savedTurn);
+            this.StartTurn();
         } else {
-            offsetVector = Vector(-100, 100);
+            let indicators: Partial<Record<Tiles, number>> = {};
+            print(TilesReverseLookup);
+            DeepPrintTable(TilesReverseLookup);
+            for (let i = 1; i <= 12; i++) {
+                let indicatorSpot = (current.location + i) % 40;
+                indicators[TilesReverseLookup[indicatorSpot]] = i;
+            }
+            CustomNetTables.SetTableValue("misc", "current_turn", {type: "start", pID: current.pID, rolls: current.turnState.rolls, indicators});
         }
-        currentHero.MoveToPosition((currentTile.GetAbsOrigin() + offsetVector) as Vector);
-
-        let currentTurn = CustomNetTables.GetTableValue("misc", "current_turn");
-        let rollOrder = CustomNetTables.GetTableValue("misc", "roll_order");
-        let currentIndex = Object.values(rollOrder).find(pID => currentTurn.pID === pID);
-        if (!currentIndex) { 
-            throw "Can't find the index :(";
-        }
-        print(currentTurn);
-        DeepPrintTable(rollOrder);
-        let savedTurn: TurnState = { pID: rollOrder[tostring((currentIndex + 1) % Object.keys(rollOrder).length)], type: "transition"};
-        DeepPrintTable(savedTurn);
-        CustomNetTables.SetTableValue("misc", "current_turn", savedTurn);
-        this.StartTurn();
     }
 
     // Called on script_reload
