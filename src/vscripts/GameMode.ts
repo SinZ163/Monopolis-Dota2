@@ -1,4 +1,5 @@
 import { reloadable, toArray } from "./lib/tstl-utils";
+import { modifier_gomoney } from "./modifiers/modifier_gomoney";
 import { modifier_movetotile } from "./modifiers/modifier_movetotile";
 import { modifier_vision } from "./modifiers/modifier_vision";
 
@@ -433,6 +434,16 @@ export class GameMode {
             "particles/customgames/capturepoints/cp_allied_fire.vpcf",
             context
         );
+        PrecacheResource(
+            "particle",
+            "particles/customgames/capturepoints/cp_allied_metal.vpcf",
+            context
+        );
+        PrecacheResource(
+            "soundfile",
+            "sounds/items/item_handofmidas.vsnd",
+            context
+        );
     }
 
     public static Activate(this: void) {
@@ -738,6 +749,18 @@ export class GameMode {
         } else {
             let futureLocation = (current.location + dice1 + dice2) % 40;
 
+            print(futureLocation, current.location);
+            if (current.location > futureLocation) {
+                print("We are spawning go??");
+                let goTile = Entities.FindByName(undefined, TilesReverseLookup[0]);
+                if (!goTile) {
+                    print(`Unable to find entity for tile ${TilesReverseLookup[0]} on location ${0}`);
+                    return;
+                }
+                let pos = (goTile.GetAbsOrigin() + Vector(200, 500, 0)) as Vector;
+                CreateModifierThinker(currentHero, undefined, modifier_gomoney.name, { duration: -1}, pos, currentHero.GetTeam(), false);
+            }
+
             let position = currentHero.GetAbsOrigin();
             let firstMovement = true;
             do {
@@ -784,6 +807,12 @@ export class GameMode {
             }
             CreateModifierThinker(currentHero, undefined, modifier_movetotile.name, { duration: -1}, position, currentHero.GetTeam(), false);
         }
+    }
+    public FoundHeroForGold() {
+        let current = this.GetCurrentPlayerState();
+        current.money += 200;
+        delete (current as any).turnState;
+        CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
     }
     public FoundHero() {
         let current = this.GetCurrentPlayerState();
