@@ -136,6 +136,11 @@ interface TransitionTurnState extends BaseState {
     type: "transition";
 }
 
+interface JailedState extends BaseState {
+    type: "jailed";
+    indicators: Partial<Record<Tiles, number>>;
+    preRolled: boolean;
+}
 interface StartTurnState extends BaseState {
     type: "start";
     indicators: Partial<Record<Tiles, number>>;
@@ -158,4 +163,4 @@ interface UnOwnedState extends BaseState {
     property: PurchasableTiles;
 }
 
-type TurnState = TransitionTurnState | StartTurnState | DiceRollState | PayRentState | UnOwnedState | EndTurnState; 
+type TurnState = TransitionTurnState | JailedState | StartTurnState | DiceRollState | PayRentState | UnOwnedState | EndTurnState; 

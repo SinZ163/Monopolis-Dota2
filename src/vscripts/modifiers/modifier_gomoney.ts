@@ -12,11 +12,19 @@ export class modifier_gomoney extends BaseModifier {
     OnIntervalThink() {
         if (!IsServer()) return;
 
-        let entities = FindUnitsInRadius(this.GetCaster()!.GetTeam(), this.GetParent().GetAbsOrigin(), undefined, 30, UnitTargetTeam.FRIENDLY, UnitTargetType.HERO, UnitTargetFlags.NONE, FindOrder.CLOSEST, false);
-        if (entities.length > 0) {
-            GameRules.Addon.FoundHeroForGold();
-            EmitSoundOn("DOTA_Item.Hand_Of_Midas", entities[0]);
-            this.Destroy();
+        let entities = FindUnitsInRadius(this.GetCaster()!.GetTeam(), this.GetParent().GetAbsOrigin(), undefined, 60, UnitTargetTeam.FRIENDLY, UnitTargetType.HERO, UnitTargetFlags.NONE, FindOrder.CLOSEST, false); 
+        
+        for (let entity of entities) {
+            print(entity.GetUnitName(), entity.GetEntityIndex(), this.GetCaster()!.GetEntityIndex());
+            if (entity.GetEntityIndex() === this.GetCaster()!.GetEntityIndex()) {
+                try {
+                    GameRules.Addon.FoundHeroForGold();
+                    EmitSoundOn("DOTA_Item.Hand_Of_Midas", entity);
+                } catch (e) {
+                    print((e as Error).message);
+                }
+                this.Destroy();
+            }
         }
     }
 

@@ -19,12 +19,9 @@ export function reloadable<T extends { new (...args: any[]): {} }>(constructor: 
  * @returns An array with items of the value type of the original object.
  */
 export function toArray<T>(obj: Record<number, T>): T[] {
-    print("ToArray");
-    DeepPrintTable(obj);
     let result: T[] = [];
     for (let [k,v] of Object.entries(obj)) {
         result[tonumber(k)! - 1] = v;
     }
-    DeepPrintTable(result);
     return result;
 }

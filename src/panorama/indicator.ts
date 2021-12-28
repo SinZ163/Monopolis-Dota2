@@ -25,7 +25,7 @@ CustomNetTables.SubscribeNetTableListener("property_ownership", (_, tile, value)
 
 CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
     if (key !== "current_turn") return;
-    if (value.type === "start") {
+    if (value.type === "start" || value.type === "jailed") {
         if (value.indicators[indicatorname] !== undefined) {
             $.GetContextPanel().RemoveClass("Hidden");
             ($("#IndicatorText") as LabelPanel).text = value.indicators[indicatorname]!.toFixed(0);

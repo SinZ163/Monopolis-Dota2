@@ -11,11 +11,18 @@ export class modifier_movetotile extends BaseModifier {
 
     OnIntervalThink() {
         if (!IsServer()) return;
-
-        let entities = FindUnitsInRadius(this.GetCaster()!.GetTeam(), this.GetParent().GetAbsOrigin(), undefined, 30, UnitTargetTeam.FRIENDLY, UnitTargetType.HERO, UnitTargetFlags.NONE, FindOrder.CLOSEST, false);
-        if (entities.length > 0) {
-            GameRules.Addon.FoundHero();
-            this.Destroy();
+        let entities = FindUnitsInRadius(this.GetParent().GetTeam(), this.GetParent().GetAbsOrigin(), undefined, 30, UnitTargetTeam.FRIENDLY, UnitTargetType.HERO, UnitTargetFlags.NONE, FindOrder.CLOSEST, false);
+        
+        for (let entity of entities) {
+            print(entity.GetUnitName(), entity.GetEntityIndex(), this.GetCaster()!.GetEntityIndex());
+            if (entity.GetEntityIndex() === this.GetCaster()!.GetEntityIndex()) {
+                try {
+                    GameRules.Addon.FoundHero();
+                } catch (e) {
+                    print((e as Error).message);
+                }
+                this.Destroy();
+            }
         }
     }
 

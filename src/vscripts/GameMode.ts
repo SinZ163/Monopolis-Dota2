@@ -480,7 +480,7 @@ export class GameMode {
                 // 0 => -1, we are mortgaging and need to grant money
                 current.money += tile.purchasePrice / 2;
                 propertyState.houseCount = -1;
-                CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
+                this.SavePlayer(current);
                 CustomNetTables.SetTableValue("property_ownership", tile.id, propertyState);
             }
         } else if (propertyState.houseCount === -1) {
@@ -489,7 +489,7 @@ export class GameMode {
                 // TODO: Error if the user is poor
                 current.money -= (tile.purchasePrice / 2) * 1.10;
                 propertyState.houseCount = 0;
-                CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
+                this.SavePlayer(current);
                 CustomNetTables.SetTableValue("property_ownership", tile.id, propertyState);
             }
         }
@@ -500,11 +500,29 @@ export class GameMode {
     PayRent(user: EntityIndex, event: { PlayerID: PlayerID; }): void {
         let current = this.GetCurrentPlayerState();
         print("Roll Dice", current.pID);
+        DeepPrintTable(current);
 
         // Anti Cheat, its just this simple
         if (!IsInToolsMode() && event.PlayerID !== current.pID) {return;}
 
         let turnState = CustomNetTables.GetTableValue("misc", "current_turn");
+        
+        if (turnState.type === "jailed") {
+            // TODO tell client they cant go negative
+            current.money -= 50;
+            this.SavePlayer(current);
+            this.LeaveJail();
+            current = this.GetCurrentPlayerState();
+            if (turnState.preRolled === 1) {
+                let diceRoll = toArray(turnState.rolls).pop();
+                if (!diceRoll) throw new Error("Why is there no dice roll?");
+                CustomNetTables.SetTableValue("misc", "current_turn", {type: "diceroll", dice1: diceRoll.dice1, dice2: diceRoll.dice2, pID: current.pID, rolls: current.turnState.rolls});
+                this.MoveForwardToLocation((current.location + diceRoll.dice1 + diceRoll.dice2) % 40);
+            } else {
+                this.StartTurn();
+            }
+            return;
+        }
 
         // this event is only available in payrent state
         if (turnState.type !== "payrent") return;
@@ -515,11 +533,11 @@ export class GameMode {
             let propertyState = CustomNetTables.GetTableValue("property_ownership", tile.id);
             let owner = CustomNetTables.GetTableValue("player_state", tostring(propertyState.owner));
             owner.money += turnState.price;
-            CustomNetTables.SetTableValue("player_state", tostring(propertyState.owner), owner);
+            this.SavePlayer(owner);
         }
         // TODO tell client they cant go negative
         current.money -= turnState.price;
-        CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
+        this.SavePlayer(current);
         CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, rolls: current.turnState.rolls, type: "endturn"});
     }
     PurchaseProperty(user: EntityIndex, event: { PlayerID: PlayerID; }): void {
@@ -539,7 +557,7 @@ export class GameMode {
         if (!this.IsPurchasableTile(tile)) return;
         current.money -= tile.purchasePrice;
         propertyState.owner = current.pID;
-        CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
+        this.SavePlayer(current);
         CustomNetTables.SetTableValue("property_ownership", tile.id, propertyState);
         CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, rolls: current.turnState.rolls, type: "endturn"});
     }
@@ -655,6 +673,7 @@ export class GameMode {
                     pID: i,
                     money: 1500,
                     location: 0,
+                    jailed: 0
                 });
             }
         }
@@ -665,10 +684,69 @@ export class GameMode {
     public GetCurrentPlayerState() {
         const turnState = CustomNetTables.GetTableValue("misc", "current_turn");
         const playerState = CustomNetTables.GetTableValue("player_state", tostring(turnState.pID));
-        return {...playerState, turnState: {...turnState, rolls: toArray(turnState.rolls)}};
+        let out = {...playerState, turnState: {...turnState, rolls: toArray(turnState.rolls)}};
+        if (out.turnState.type === "jailed") {
+            (out.turnState as any).preRolled = out.turnState.preRolled === 1
+        }
+        return out as PlayerState & {turnState: TurnState};
     }
 
-    public StartTurn() {
+    public GetStartLocationOfTile(tileId: number) {
+        let tile = Entities.FindByName(undefined, TilesReverseLookup[tileId]);
+        if (!tile) {
+            error("Tile not found");
+        }
+        let middleVector = Vector(0, 0, 0);
+        if (tileId < 10) {
+            middleVector = Vector(200, 500, 0);
+        } else if (tileId < 20) {
+            middleVector = Vector(500, -200, 0);
+        } else if (tileId < 30) {
+            middleVector = Vector(-200, -500, 0);
+        } else {
+            middleVector = Vector(-500, 200);
+        }
+        return (tile.GetAbsOrigin() + middleVector) as Vector;
+    }
+    public SavePlayer(player: PlayerState & {turnState?: TurnState}) {
+        let newPlayer = {...player};
+        delete newPlayer.turnState;
+        CustomNetTables.SetTableValue("player_state", tostring(player.pID), player);
+    }
+
+    public GotoJail() {
+        let current = this.GetCurrentPlayerState();
+        let currentPlayer = PlayerResource.GetPlayer(current.pID);
+        if (!currentPlayer) {
+            print("WTF why is player state on an invalid player");
+            return;
+        }
+        let currentHero = currentPlayer.GetAssignedHero();
+        ExecuteOrderFromTable({OrderType: UnitOrder.STOP, UnitIndex: currentPlayer.GetEntityIndex(), Queue: false});
+        // TODO: Make teleport pretty
+        FindClearSpaceForUnit(currentHero, Vector(0,0,500), true);
+        CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID, rolls: current.turnState.rolls});
+        current.jailed = 3;
+        current.location = -1;
+        this.SavePlayer(current);
+    }
+    public LeaveJail() {
+        let current = this.GetCurrentPlayerState();
+        let currentPlayer = PlayerResource.GetPlayer(current.pID);
+        if (!currentPlayer) {
+            print("WTF why is player state on an invalid player");
+            return;
+        }
+        let currentHero = currentPlayer.GetAssignedHero();
+        let pos = this.GetStartLocationOfTile(10);
+        // TODO: Make teleport pretty
+        FindClearSpaceForUnit(currentHero, (pos + Vector(0,0,500)) as Vector, true);
+        current.jailed = 0;
+        current.location = 10;
+        this.SavePlayer(current);
+    }
+
+    public StartTurn(preRolled = false) {
         let current = this.GetCurrentPlayerState();
         print("Turn Start", current.pID);
 
@@ -677,59 +755,59 @@ export class GameMode {
             print("WTF why is player state on an invalid player");
             return;
         }
-        let currentHero = currentPlayer.GetAssignedHero();
-        let currentTile = Entities.FindByName(undefined, TilesReverseLookup[current.location]);
-        if (!currentTile) {
-            print(`Unable to find entity for tile ${TilesReverseLookup[current.location]} on location ${current.location}`);
-            return;
-        }
-
-        let middleVector = Vector(0, 0, 0);
-        if (current.location < 10) {
-            middleVector = Vector(200, 500, 0);
-        } else if (current.location < 20) {
-            middleVector = Vector(500, -200, 0);
-        } else if (current.location < 30) {
-            middleVector = Vector(-200, -500, 0);
+        print(current.jailed);
+        if (preRolled || current.jailed > 0) {
+            let indicators: Partial<Record<Tiles, number>> = {};
+            for (let i = 1; i <= 12; i++) {
+                if (i % 2 === 1 && current.jailed > 1) continue;
+                let indicatorSpot = (10 + i) % 40;
+                indicators[TilesReverseLookup[indicatorSpot]] = i;
+            }
+            CustomNetTables.SetTableValue("misc", "current_turn", {type: "jailed", pID: current.pID, rolls: current.turnState.rolls, indicators, preRolled});
         } else {
-            middleVector = Vector(-500, 200);
+            let currentHero = currentPlayer.GetAssignedHero();
+    
+            currentHero.MoveToPosition(this.GetStartLocationOfTile(current.location));
+    
+            let indicators: Partial<Record<Tiles, number>> = {};
+            for (let i = 1; i <= 12; i++) {
+                let indicatorSpot = (current.location + i) % 40;
+                indicators[TilesReverseLookup[indicatorSpot]] = i;
+            }
+            CustomNetTables.SetTableValue("misc", "current_turn", {type: "start", pID: current.pID, rolls: current.turnState.rolls, indicators});
         }
-
-        currentHero.MoveToPosition(
-            (currentTile.GetAbsOrigin() + middleVector) as Vector
-        );
-
-        let indicators: Partial<Record<Tiles, number>> = {};
-        print(TilesReverseLookup);
-        DeepPrintTable(TilesReverseLookup);
-        for (let i = 1; i <= 12; i++) {
-            let indicatorSpot = (current.location + i) % 40;
-            indicators[TilesReverseLookup[indicatorSpot]] = i;
-        }
-        CustomNetTables.SetTableValue("misc", "current_turn", {type: "start", pID: current.pID, rolls: current.turnState.rolls, indicators});
     }
     public RollDice(userId: EntityIndex, event: { PlayerID: PlayerID}) {
         let current = this.GetCurrentPlayerState();
         print("Roll Dice", current.pID);
+        DeepPrintTable(current);
 
         // Anti Cheat, its just this simple
         if (!IsInToolsMode() && event.PlayerID !== current.pID) {return;}
 
-        let currentPlayer = PlayerResource.GetPlayer(current.pID);
-        if (!currentPlayer) {
-            print("WTF why is player state on an invalid player");
-            return;
-        }
-        let currentHero = currentPlayer.GetAssignedHero();
-        let currentTile = Entities.FindByName(undefined, TilesReverseLookup[current.location]);
-        if (!currentTile) {
-            print(`Unable to find entity for tile ${TilesReverseLookup[current.location]} on location ${current.location}`);
-            return;
-        }
-
         let dice1 = RandomInt(1, 6);
         let dice2 = RandomInt(1, 6);
         current.turnState.rolls = [...current.turnState.rolls, {dice1,dice2}];
+
+        // We are in jail and did NOT get doubles :(
+        if (current.jailed > 0 && dice1 !== dice2) {
+            current.jailed--;
+            this.SavePlayer(current);
+            if (current.jailed === 0) {
+                CustomNetTables.SetTableValue("misc", "current_turn", current.turnState);
+                this.StartTurn(true);
+            } else {
+                CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID, rolls: current.turnState.rolls});
+            }
+            return;
+        } else if (current.jailed > 0) {
+            this.LeaveJail();
+            let oldRolls = current.turnState.rolls;
+            current = this.GetCurrentPlayerState();
+            current.turnState.rolls = oldRolls;
+            // cheesy logic to make sure its not treated as a double later on
+            current.turnState.rolls.push({dice1: 1, dice2: -1});
+        }
         let turnState: TurnState = {
             pID: current.pID,
             type: "diceroll",
@@ -738,75 +816,77 @@ export class GameMode {
             dice2,
         }
         CustomNetTables.SetTableValue("misc", "current_turn", turnState);
-        DeepPrintTable(turnState.rolls);
 
-        // TODO: Doubles logic
-        print(dice1, dice2);
         if (dice1 === dice2 && turnState.rolls.length >= 3) {
-            // TODO: Make teleport pretty
-            FindClearSpaceForUnit(currentHero, Vector(10 * 400, 0), true);
-            CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID, rolls: current.turnState.rolls});
+            this.GotoJail();
+            return;
         } else {
             let futureLocation = (current.location + dice1 + dice2) % 40;
-
-            print(futureLocation, current.location);
-            if (current.location > futureLocation) {
-                print("We are spawning go??");
-                let goTile = Entities.FindByName(undefined, TilesReverseLookup[0]);
-                if (!goTile) {
-                    print(`Unable to find entity for tile ${TilesReverseLookup[0]} on location ${0}`);
-                    return;
-                }
-                let pos = (goTile.GetAbsOrigin() + Vector(200, 500, 0)) as Vector;
-                CreateModifierThinker(currentHero, undefined, modifier_gomoney.name, { duration: -1}, pos, currentHero.GetTeam(), false);
-            }
-
-            let position = currentHero.GetAbsOrigin();
-            let firstMovement = true;
-            do {
-                let futureSide = math.floor(futureLocation / 10);
-                let currentSide = math.floor(current.location / 10);
-    
-                let currentDelta = current.location % 10;
-                let futureDelta = futureLocation % 10;
-    
-                let rowAmount: number;
-                if (currentSide === futureSide) {
-                    rowAmount = futureDelta - currentDelta;
-                } else {
-                    rowAmount = 10 - currentDelta;
-                }
-                let sameSideVector: Vector;
-                if (currentSide === 0) {
-                    sameSideVector = Vector(rowAmount * -400, 0, 0);
-                } else if (currentSide === 1) {
-                    sameSideVector = Vector(0, rowAmount * 400, 0);
-                } else if (currentSide === 2) {
-                    sameSideVector = Vector(rowAmount * 400, 0, 0);
-                } else {
-                    sameSideVector = Vector(0, rowAmount * -400, 0);
-                }
-                position = (position + sameSideVector) as Vector;
-                print("Pre Order", firstMovement);
-                ExecuteOrderFromTable({
-                    OrderType: UnitOrder.MOVE_TO_POSITION,
-                    UnitIndex: currentHero.GetEntityIndex(),
-                    Position: position,
-                    Queue: !firstMovement,
-                });
-                print("Post Order", firstMovement);
-                current.location = (current.location + rowAmount) % 40;
-                firstMovement = false;
-                print(current.location, futureLocation);
-            } while (current.location !== futureLocation);
-            CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
-            let futureTile = Entities.FindByName(undefined, TilesReverseLookup[futureLocation]);
-            if (!futureTile) {
-                print("Warning: future location tile is missing? wtf");
-                return;
-            }
-            CreateModifierThinker(currentHero, undefined, modifier_movetotile.name, { duration: -1}, position, currentHero.GetTeam(), false);
+            print(current.location, dice1, dice2, futureLocation);
+            this.SavePlayer(current);
+            this.MoveForwardToLocation(futureLocation);
         }
+    }
+    public MoveForwardToLocation(futureLocation: number) {
+        let current = this.GetCurrentPlayerState();
+        let currentPlayer = PlayerResource.GetPlayer(current.pID);
+        if (!currentPlayer) {
+            print("WTF why is player state on an invalid player");
+            return;
+        }
+        let currentHero = currentPlayer.GetAssignedHero();
+
+        if (current.location > futureLocation) {
+            print("We are spawning go??");
+            let pos = this.GetStartLocationOfTile(0);
+            CreateModifierThinker(currentHero, undefined, modifier_gomoney.name, { duration: -1}, pos, currentHero.GetTeam(), false);
+        }
+
+        let position = this.GetStartLocationOfTile(current.location);
+        let firstMovement = true;
+        do {
+            let futureSide = math.floor(futureLocation / 10);
+            let currentSide = math.floor(current.location / 10);
+
+            let currentDelta = current.location % 10;
+            let futureDelta = futureLocation % 10;
+
+            let rowAmount: number;
+            if (currentSide === futureSide) {
+                rowAmount = futureDelta - currentDelta;
+            } else {
+                rowAmount = 10 - currentDelta;
+            }
+            let sameSideVector: Vector;
+            if (currentSide === 0) {
+                sameSideVector = Vector(rowAmount * -400, 0, 0);
+            } else if (currentSide === 1) {
+                sameSideVector = Vector(0, rowAmount * 400, 0);
+            } else if (currentSide === 2) {
+                sameSideVector = Vector(rowAmount * 400, 0, 0);
+            } else {
+                sameSideVector = Vector(0, rowAmount * -400, 0);
+            }
+            position = (position + sameSideVector) as Vector;
+            print("Pre Order", firstMovement);
+            ExecuteOrderFromTable({
+                OrderType: UnitOrder.MOVE_TO_POSITION,
+                UnitIndex: currentHero.GetEntityIndex(),
+                Position: position,
+                Queue: !firstMovement,
+            });
+            print("Post Order", firstMovement);
+            current.location = (current.location + rowAmount) % 40;
+            firstMovement = false;
+            print(current.location, futureLocation);
+        } while (current.location !== futureLocation);
+        this.SavePlayer(current);
+        let futureTile = Entities.FindByName(undefined, TilesReverseLookup[futureLocation]);
+        if (!futureTile) {
+            print("Warning: future location tile is missing? wtf");
+            return;
+        }
+        CreateModifierThinker(currentHero, undefined, modifier_movetotile.name, { duration: -1}, position, currentHero.GetTeam(), false);
     }
     public FoundHeroForGold() {
         let current = this.GetCurrentPlayerState();
@@ -837,10 +917,12 @@ export class GameMode {
             }
         } else if (tile.type === "tax") {
             CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "payrent", rolls: current.turnState.rolls, property: tile.id, price: tile.cost});
+        } else if (tile.id === "gotojail") {
+            this.GotoJail();
         } else {
             // TODO: implement chance/communitybreast/etc
             CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
-            CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID, rolls: current.turnState.rolls})
+            CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID, rolls: current.turnState.rolls});
         }
     }
 
@@ -892,7 +974,7 @@ export class GameMode {
         let currentHero = currentPlayer.GetAssignedHero();
 
         let endturn = true;
-        if (current.turnState.rolls.length > 0 && current.turnState.rolls.length < 3) {
+        if (current.jailed === 0 && current.turnState.rolls.length > 0 && current.turnState.rolls.length < 3) {
             let diceRolls = current.turnState.rolls[current.turnState.rolls.length - 1];
             if (diceRolls.dice1 === diceRolls.dice2) {
                 print("End turn bypassed by doubles?");
@@ -900,22 +982,24 @@ export class GameMode {
             }
         }
         if (endturn) {
-            let currentTile = Entities.FindByName(undefined, TilesReverseLookup[current.location]);
-            if (!currentTile) {
-                print(`Unable to find entity for tile ${TilesReverseLookup[current.location]} on location ${current.location}`);
-                return;
-            }
-            let offsetVector: Vector;
-            if (current.location < 10) {
-                offsetVector = Vector(100, 100);
-            } else if (current.location < 20) {
-                offsetVector = Vector(100, -100);
-            } else if (current.location < 30) {
-                offsetVector = Vector(-100, -100);
-            } else {
-                offsetVector = Vector(-100, 100);
-            }
-            currentHero.MoveToPosition((currentTile.GetAbsOrigin() + offsetVector) as Vector);
+            if (current.jailed === 0) {
+                let currentTile = Entities.FindByName(undefined, TilesReverseLookup[current.location]);
+                if (!currentTile) {
+                    print(`Unable to find entity for tile ${TilesReverseLookup[current.location]} on location ${current.location}`);
+                    return;
+                }
+                let offsetVector: Vector;
+                if (current.location < 10) {
+                    offsetVector = Vector(100, 100);
+                } else if (current.location < 20) {
+                    offsetVector = Vector(100, -100);
+                } else if (current.location < 30) {
+                    offsetVector = Vector(-100, -100);
+                } else {
+                    offsetVector = Vector(-100, 100);
+                }
+                currentHero.MoveToPosition((currentTile.GetAbsOrigin() + offsetVector) as Vector);
+            }            
     
             let currentTurn = CustomNetTables.GetTableValue("misc", "current_turn");
             let rollOrder = CustomNetTables.GetTableValue("misc", "roll_order");

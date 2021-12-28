@@ -46,6 +46,7 @@ interface PlayerState {
     pID: PlayerID;
     money: number;
     location: number;
+    jailed: number;
 }
 
 
