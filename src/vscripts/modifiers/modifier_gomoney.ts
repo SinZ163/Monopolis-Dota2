@@ -12,7 +12,7 @@ export class modifier_gomoney extends BaseModifier {
     OnIntervalThink() {
         if (!IsServer()) return;
 
-        let entities = FindUnitsInRadius(this.GetCaster()!.GetTeam(), this.GetParent().GetAbsOrigin(), undefined, 60, UnitTargetTeam.FRIENDLY, UnitTargetType.HERO, UnitTargetFlags.NONE, FindOrder.CLOSEST, false); 
+        let entities = FindUnitsInRadius(this.GetCaster()!.GetTeam(), this.GetParent().GetAbsOrigin(), undefined, 100, UnitTargetTeam.FRIENDLY, UnitTargetType.HERO, UnitTargetFlags.NONE, FindOrder.CLOSEST, false); 
         
         for (let entity of entities) {
             print(entity.GetUnitName(), entity.GetEntityIndex(), this.GetCaster()!.GetEntityIndex());

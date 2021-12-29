@@ -39,8 +39,12 @@ CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
         $.Msg("Starting movement");
         MovementSchedule(true);
     }
+
+    let diceRolls = toArray((value as TurnState).rolls);
+    let isDoubles = (diceRolls.length > 0 && diceRolls.length < 3 && diceRolls[diceRolls.length - 1].dice1 === diceRolls[diceRolls.length - 1].dice2);
+
     try {
-        if (value.type === "endturn" || value.type === "unowned" || value.type === "payrent") {
+        if (!isDoubles && (value.type === "endturn" || value.type === "unowned" || value.type === "payrent")) {
             $.Msg("Cancelling movement");
             let movementSchedule = $.GetContextPanel().GetAttributeInt("movementSchedule", -1);
             if (movementSchedule > -1) {
@@ -53,8 +57,7 @@ CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
         case "diceroll":
             ($("#dice1") as LabelPanel).text = value.dice1.toFixed(0);
             ($("#dice2") as LabelPanel).text = value.dice2.toFixed(0);
-            let diceRolls = toArray(value.rolls);
-            if (diceRolls.length > 0 && diceRolls.length < 3 && diceRolls[diceRolls.length - 1].dice1 === diceRolls[diceRolls.length - 1].dice2) {
+            if (isDoubles) {
                 ($("#endturnLabel") as LabelPanel).text = $.Localize("reroll");
             } else {
                 ($("#endturnLabel") as LabelPanel).text = $.Localize("endturn");
