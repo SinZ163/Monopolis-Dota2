@@ -3,30 +3,31 @@ const MOVEMENT_SCHEDULE_TIMER = 0.1;
 CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
     if (key !== "current_turn") return;
     let currentState = $.GetContextPanel().GetAttributeString("currentstate", "undefined");
-    $.Msg(_, "|", key, "|", value);
-    $.Msg(currentState, "|", value.type);
+    let turnState = value as TurnState;
+    $.Msg(_, "|", key, "|", turnState);
+    $.Msg(currentState, "|", turnState.type);
 
     if (currentState !== "undefined") {
         $.GetContextPanel().RemoveClass(currentState);
     }
     
     // Why does TS think value.type is sometimes a number, nani
-    if (typeof(value.type) === "number") {
-        $.Msg("WARNING: Value.type is a number: ", key, "|", value);
+    if (typeof(turnState.type) === "number") {
+        $.Msg("WARNING: Value.type is a number: ", key, "|", turnState);
         return;
     };
-    $.GetContextPanel().AddClass(value.type);
-    $.GetContextPanel().SetAttributeString("currentstate", value.type);
+    $.GetContextPanel().AddClass(turnState.type);
+    $.GetContextPanel().SetAttributeString("currentstate", turnState.type);
 
     let currentTurn = $.GetContextPanel().GetAttributeInt("currentturn", -1);
-    if (value.pID !== currentTurn) {
+    if (turnState.pID !== currentTurn) {
         $.GetContextPanel().RemoveClass("JailDice");
         $.GetContextPanel().RemoveClass("JailPreRolled");
         $.GetContextPanel().RemoveClass(`Turn_${currentTurn}`);
-        $.GetContextPanel().AddClass(`Turn_${value.pID}`);
-        $.GetContextPanel().SetAttributeInt("currentturn", value.pID);
+        $.GetContextPanel().AddClass(`Turn_${turnState.pID}`);
+        $.GetContextPanel().SetAttributeInt("currentturn", turnState.pID);
 
-        const heroEntIndex = Players.GetPlayerHeroEntityIndex(value.pID);
+        const heroEntIndex = Players.GetPlayerHeroEntityIndex(turnState.pID);
         GameUI.SetCameraTarget(heroEntIndex);
 
         let movementSchedule = $.GetContextPanel().GetAttributeInt("movementSchedule", -1);
@@ -40,11 +41,11 @@ CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
         MovementSchedule(true);
     }
 
-    let diceRolls = toArray((value as TurnState).rolls);
+    let diceRolls = toArray(turnState.rolls);
     let isDoubles = (diceRolls.length > 0 && diceRolls.length < 3 && diceRolls[diceRolls.length - 1].dice1 === diceRolls[diceRolls.length - 1].dice2);
 
     try {
-        if (!isDoubles && (value.type === "endturn" || value.type === "unowned" || value.type === "payrent")) {
+        if (!isDoubles && (turnState.type === "endturn" || turnState.type === "unowned" || turnState.type === "payrent")) {
             $.Msg("Cancelling movement");
             let movementSchedule = $.GetContextPanel().GetAttributeInt("movementSchedule", -1);
             if (movementSchedule > -1) {
@@ -53,10 +54,10 @@ CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
         }
     } catch {}
 
-    switch(value.type) {
+    switch(turnState.type) {
         case "diceroll":
-            ($("#dice1") as LabelPanel).text = value.dice1.toFixed(0);
-            ($("#dice2") as LabelPanel).text = value.dice2.toFixed(0);
+            ($("#dice1") as LabelPanel).text = turnState.dice1.toFixed(0);
+            ($("#dice2") as LabelPanel).text = turnState.dice2.toFixed(0);
             if (isDoubles) {
                 ($("#endturnLabel") as LabelPanel).text = $.Localize("reroll");
             } else {
@@ -74,23 +75,95 @@ CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
             }
             break;
         case "unowned":
-            $("#buypropertyLabel").SetDialogVariableLocString("property", `#tile_${value.property}`);
+            $("#buypropertyLabel").SetDialogVariableLocString("property", `#tile_${turnState.property}`);
             break;
         case "payrent":
-            $("#payrentLabel").SetDialogVariableInt("price", value.price);
+            $("#payrentLabel").SetDialogVariableInt("price", turnState.price);
             break;
         case "jailed":
             $("#payrentLabel").SetDialogVariableInt("price", 50);
-            if (value.preRolled) {
+            if (turnState.preRolled) {
                 $.GetContextPanel().AddClass("JailPreRolled");
             }
             break;
+        case "card_prompt":
+            let imageUrl: string;
+            switch (turnState.deck) {
+                case "chance":
+                    imageUrl = "s2r://panorama/images/spellicons/ogre_magi_multicast_png.vtex";
+                    break;
+                case "communitybreast":
+                    imageUrl = "s2r://panorama/images/spellicons/invoker_invoke_png.vtex";
+                    break;
+            } 
+            ($("#CardPromptImage") as ImagePanel).SetImage(imageUrl);
+            ($("#CardDeckType") as LabelPanel).text = $.Localize(`deck_${turnState.deck}`);
+            break;
+        case "card_result":
+            $.Msg("Can you see me god?");
+            try {
+                let colourClass = "";
+                $("#CardResultButton").RemoveClass("green");
+                $("#CardResultButton").RemoveClass("red");
+                switch(turnState.card.type) {
+                    case "fuckjail":
+                        colourClass = "green";
+                        break;
+                    case "money_gain":
+                    case "money_gain_others":
+                        colourClass = "green";
+                        $("#CardResultText").SetDialogVariableInt("value", turnState.card.value);                        $("#CardResultButtonText").SetDialogVariableInt("value", turnState.card.value);
+                        $("#CardResultButtonText").SetDialogVariableInt("value", turnState.card.value);
+                        break;
+                    case "jail":
+                        colourClass = "red";
+                        break;
+                    case "money_lose":
+                    case "money_lose_others":
+                        colourClass = "red";
+                        $("#CardResultText").SetDialogVariableInt("value", turnState.card.value);                        $("#CardResultText").SetDialogVariableInt("value", turnState.card.value);
+                        $("#CardResultButtonText").SetDialogVariableInt("value", turnState.card.value);
+                        break;
+                    case "repairs":
+                        colourClass = "red";
+                        $("#CardResultText").SetDialogVariableInt("house", turnState.card.house);
+                        $("#CardResultText").SetDialogVariableInt("hotel", turnState.card.hotel);
+                        break;
+                    case "teleport":
+                        $("#CardResultText").SetDialogVariableLocString("dest", "tile_" + turnState.card.dest);
+                        break;
+                    case "teleport_relative":
+                        $("#CardResultText").SetDialogVariableInt("value", Math.abs(turnState.card.value));                        $("#CardResultButtonText").SetDialogVariableInt("value", turnState.card.value);
+                        $("#CardResultButtonText").SetDialogVariableInt("value", Math.abs(turnState.card.value));
+                        break;
+                }
+                $.Msg("A");
+                let text = $.Localize("card_" + turnState.card.type, $("#CardResultButtonText"));
+                $.Msg("B");
+                $.Msg(text);
+                $.Msg("B.2");
+                ($("#CardResultButtonText") as LabelPanel).text = text;
+                $.Msg("C");
+                let resultText = $.Localize(turnState.card.text, $("#CardResultText"));
+                $.Msg("D");
+                $.Msg(resultText);
+                $.Msg("D.2");
+                ($("#CardResultText") as LabelPanel).text = resultText;
+                $.Msg("E");
+                if (colourClass !== "") {
+                    $("#CardResultButton").AddClass(colourClass);
+                }
+            } catch (e) {
+                $.Msg(e);
+            }            
+            $.Msg("Am I alive?!");
+            break;
         case "endturn":
-            let playerState = CustomNetTables.GetTableValue("player_state", value.pID.toFixed(0));
+            let playerState = CustomNetTables.GetTableValue("player_state", turnState.pID.toFixed(0));
             $.Msg(playerState);
             if (playerState.jailed > 0 && playerState.jailed < 3) {
                 $.GetContextPanel().AddClass("JailDice");
-                let diceRolls = toArray(value.rolls);
+                let diceRolls = toArray(turnState.rolls);
                 ($("#dice1") as LabelPanel).text = diceRolls[diceRolls.length - 1].dice1.toFixed(0);
                 ($("#dice2") as LabelPanel).text = diceRolls[diceRolls.length - 1].dice2.toFixed(0);
             }
@@ -118,6 +191,14 @@ function Endturn() {
 
 function StartTrade() {
     $("#TradeScreen").RemoveClass("Hidden");
+}
+
+function DrawCard() {
+    $.Msg("Draw card?");
+    GameEvents.SendCustomGameEventToServer("monopolis_requestcard", {});
+}
+function AcknowledgeCard() {
+    GameEvents.SendCustomGameEventToServer("monopolis_acknowledgecard", {});
 }
 
 CustomNetTables.SubscribeNetTableListener("player_state", (_, pID, state) => {
@@ -166,6 +247,58 @@ CustomNetTables.SubscribeNetTableListener("property_ownership", (_, tile, value)
         (existingPanel.FindChildTraverse("PropertyName") as LabelPanel).text = $.Localize(`#tile_${tile}`);
         existingPanel.FindChildTraverse("BuyHouse")?.SetPanelEvent("onactivate", () => AddHouse(tile));
         existingPanel.FindChildTraverse("SellHouse")?.SetPanelEvent("onactivate", () => RemoveHouse(tile));
+        let colourPanel = existingPanel.FindChildTraverse("PropertyColour");
+        if (!colourPanel) return;
+        switch (tile) {
+            case "brown1":
+            case "brown2":
+                colourPanel.AddClass("brown");
+                break;
+            case "teal1":
+            case "teal2":
+            case "teal3":
+                colourPanel.AddClass("teal");
+                break;
+            case "magenta1":
+            case "magenta2":
+            case "magenta3":
+                colourPanel.AddClass("magenta");
+                break;
+            case "orange1":
+            case "orange2":
+            case "orange3":
+                colourPanel.AddClass("orange");
+                break;
+            case "red1":
+            case "red2":
+            case "red3":
+                colourPanel.AddClass("red");
+                break;
+            case "yellow1":
+            case "yellow2":
+            case "yellow3":
+                colourPanel.AddClass("yellow");
+                break;
+            case "green1":
+            case "green2":
+            case "green3":
+                colourPanel.AddClass("green");
+                break;
+            case "blue1":
+            case "blue2":
+                colourPanel.AddClass("blue");
+                break;
+            case "railroad1":
+            case "railroad2":
+            case "railroad3":
+            case "railroad4":
+                colourPanel.AddClass("black");
+                break;
+            case "utility1":
+            case "utility2":
+                colourPanel.AddClass("white");
+                break;
+        }
     }
     // default to -2 so the -1's coming in from unowned cause the handler to run
     let currentOwner = existingPanel.GetAttributeInt("current_owner", -2);

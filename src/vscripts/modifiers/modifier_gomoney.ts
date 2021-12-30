@@ -5,7 +5,7 @@ export class modifier_gomoney extends BaseModifier {
 
     OnCreated( kv: any) {
         if (IsServer()) {
-            this.StartIntervalThink(0.5);
+            this.StartIntervalThink(0);
         }
     }
 

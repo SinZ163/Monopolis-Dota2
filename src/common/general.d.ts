@@ -14,6 +14,8 @@ interface UnitData {
     level: number
 }
 
+type Deck = "chance"|"communitybreast";
+
 type HouseTiles = 
 |    "brown1"
 |    "brown2"
@@ -91,6 +93,7 @@ interface BaseDefinition {
 interface PropertyDefinition extends BaseDefinition {
     type: "property";
     id: HouseTiles;
+    category: string;
     purchasePrice: number;
     housePrice: number;
     rentPrice: number;
@@ -120,7 +123,7 @@ interface UtilityDefinition extends BaseDefinition {
 
 interface CardDefinition extends BaseDefinition {
     type: "card";
-    deck: "chance"|"communitybreast";
+    deck: Deck;
 } 
 interface MiscDefinition extends BaseDefinition {
     type: "misc";
@@ -162,5 +165,62 @@ interface UnOwnedState extends BaseState {
     type: "unowned";
     property: PurchasableTiles;
 }
+interface CardPendingState extends BaseState {
+    type: "card_prompt",
+    deck: Deck
+}
+interface CardResultState extends BaseState {
+    type: "card_result",
+    card: CardAction,
+}
 
-type TurnState = TransitionTurnState | JailedState | StartTurnState | DiceRollState | PayRentState | UnOwnedState | EndTurnState; 
+type TurnState = TransitionTurnState | JailedState | StartTurnState | DiceRollState | PayRentState | UnOwnedState | EndTurnState | CardPendingState | CardResultState;
+
+interface BaseCardAction {
+    text: string
+}
+
+interface TeleportCardAction extends BaseCardAction {
+    type: "teleport",
+    dest: Tiles,
+}
+interface TeleportCategoryCardAction extends BaseCardAction {
+    type: "teleport_category",
+    dest: "railroad" | "utility",
+}
+interface TeleportRelativeCardAction extends BaseCardAction {
+    type: "teleport_relative",
+    value: number
+}
+
+interface MoneyGainCardAction extends BaseCardAction {
+    type: "money_gain",
+    value: number,
+}
+interface MoneyGainOthersCardAction extends BaseCardAction {
+    type: "money_gain_others",
+    value: number,
+}
+interface MoneyLoseCardAction extends BaseCardAction {
+    type: "money_lose",
+    value: number,
+}
+interface MoneyLoseOthersCardAction extends BaseCardAction {
+    type: "money_lose_others",
+    value: number,
+}
+
+interface GOTOJailCardAction extends BaseCardAction {
+    type: "jail"
+}
+interface FUCKJailCardAction extends BaseCardAction {
+    type: "fuckjail"
+}
+
+interface RepairsCardAction extends BaseCardAction {
+    type: "repairs",
+    house: number,
+    hotel: number,
+}
+
+type CardAction = TeleportCardAction | TeleportCategoryCardAction | TeleportRelativeCardAction | MoneyGainCardAction | MoneyLoseCardAction | MoneyGainOthersCardAction | MoneyLoseOthersCardAction | GOTOJailCardAction | FUCKJailCardAction | RepairsCardAction;

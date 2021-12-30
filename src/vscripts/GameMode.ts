@@ -11,6 +11,45 @@ declare global {
     }
 }
 
+const CardDeck: Record<"chance"|"communitybreast", CardAction[]> = {
+    "chance": [
+        //{type: "teleport", dest: "go", text: "card_adv_go"},
+        //{type: "teleport", dest: "red3", text: "card_adv"},
+        //{type: "teleport", dest: "magenta1", text: "card_adv"},
+        {type: "teleport_category", dest: "utility", text: "card_adv_utility"},
+        {type: "teleport_category", dest: "railroad", text: "card_adv_railroad"}, // intentionally repeated
+        //{type: "teleport_category", dest: "railroad", text: "card_adv_railroad"},
+        //{type: "money_gain", value: 50, text: "CHANCE_BankDividend"},
+        //{type: "fuckjail", text: "card_fuckjail_text"},
+        //{type: "teleport_relative", value: -3, text: "card_adv_relative_back"},
+        //{type: "jail", text: "card_jail_text"},
+        //{type: "repairs", house: 25, hotel: 100, text: "CHANCE_GeneralRepairs"},
+        //{type: "money_lose", value: 15, text: "CHANCE_Speeding"},
+        //{type: "teleport", dest: "railroad1", text: "card_adv_railroad1"},
+        //{type: "teleport", dest: "blue2", text: "card_adv_blue2"},
+        //{type: "money_lose_others", value: 50, text: "CHANCE_Chairman"},
+        //{type: "money_gain", value: 150, text: "CHANCE_BuildingLoan"},
+    ],
+    "communitybreast": [
+        {type: "teleport", dest: "go", text: "card_adv_go"},
+        {type: "money_gain", value: 200, text: "COMMUNITYBREAST_BankError"},
+        {type: "money_lose", value: 50, text: "COMMUNITYBREAST_Doctor"},
+        {type: "money_gain", value: 50, text: "COMMUNITYBREAST_Stock"},
+        {type: "fuckjail", text: "card_fuckjail_text"},
+        {type: "jail", text: "card_jail_text"},
+        {type: "money_gain", value: 100, text: "COMMUNITYBREAST_HolidaySeason"},
+        {type: "money_gain", value: 20, text: "COMMUNITYBREAST_Income"},
+        {type: "money_gain_others", value: 10, text: "COMMUNITYBREAST_Birthday"},
+        {type: "money_gain", value: 100, text: "COMMUNITYBREAST_LifeInsurance"},
+        {type: "money_lose", value: 50, text: "COMMUNITYBREAST_Hospital"},
+        {type: "money_lose", value: 50, text: "COMMUNITYBREAST_School"},
+        {type: "money_gain", value: 25, text: "COMMUNITYBREAST_Consultancy"},
+        {type: "repairs", house: 40, hotel: 115, text: "COMMUNITYBREAST_StreetRepairs"},
+        {type: "money_gain", value: 10, text: "COMMUNITYBREAST_Beauty"},
+        {type: "money_gain", value: 100, text: "COMMUNITYBREAST_Inherit"},
+    ],
+};
+
 const TilesObj: Record<Tiles,SpaceDefinition> = {
     go: {
         type: "misc",
@@ -19,6 +58,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     },
     brown1: {
         type: "property",
+        category: "brown",
         id: "brown1",
         index: 1,
         purchasePrice: 60,
@@ -39,6 +79,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     brown2: {
         type: "property",
         id: "brown2",
+        category: "brown",
         index: 3,
         purchasePrice: 60,
         housePrice: 50,
@@ -65,6 +106,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     teal1: {
         type: "property",
         id: "teal1",
+        category: "teal",
         index: 6,
         purchasePrice: 100,
         housePrice: 50,
@@ -84,6 +126,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     teal2: {
         type: "property",
         id: "teal2",
+        category: "teal",
         index: 8,
         purchasePrice: 100,
         housePrice: 50,
@@ -97,6 +140,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     teal3: {
         type: "property",
         id: "teal3",
+        category: "teal",
         index: 9,
         purchasePrice: 120,
         housePrice: 50,
@@ -115,6 +159,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     magenta1: {
         type: "property",
         id: "magenta1",
+        category: "magenta",
         index: 11,
         purchasePrice: 140,
         housePrice: 100,
@@ -135,6 +180,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     magenta2: {
         type: "property",
         id: "magenta2",
+        category: "magenta",
         index: 13,
         purchasePrice: 140,
         housePrice: 100,
@@ -148,6 +194,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     magenta3: {
         type: "property",
         id: "magenta3",
+        category: "magenta",
         index: 14,
         purchasePrice: 160,
         housePrice: 100,
@@ -168,6 +215,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     orange1: {
         type: "property",
         id: "orange1",
+        category: "orange",
         index: 16,
         purchasePrice: 180,
         housePrice: 100,
@@ -187,6 +235,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     orange2: {
         type: "property",
         id: "orange2",
+        category: "orange",
         index: 18,
         purchasePrice: 180,
         housePrice: 100,
@@ -200,6 +249,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     orange3: {
         type: "property",
         id: "orange3",
+        category: "orange",
         index: 19,
         purchasePrice: 200,
         rentPrice: 16,
@@ -218,6 +268,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     red1: {
         type: "property",
         id: "red1",
+        category: "red",
         index: 21,
         purchasePrice: 220,
         housePrice: 150,
@@ -237,6 +288,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     red2: {
         type: "property",
         id: "red2",
+        category: "red",
         index: 23,
         purchasePrice: 220,
         housePrice: 150,
@@ -250,6 +302,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     red3: {
         type: "property",
         id: "red3",
+        category: "red",
         index: 24,
         purchasePrice: 240,
         housePrice: 150,
@@ -270,6 +323,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     yellow1: {
         type: "property",
         id: "yellow1",
+        category: "yellow",
         index: 26,
         purchasePrice: 260,
         housePrice: 150,
@@ -283,6 +337,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     yellow2: {
         type: "property",
         id: "yellow2",
+        category: "yellow",
         index: 27,
         purchasePrice: 260,
         housePrice: 150,
@@ -303,6 +358,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     yellow3: {
         type: "property",
         id: "yellow3",
+        category: "yellow",
         index: 29,
         purchasePrice: 280,
         housePrice: 150,
@@ -321,6 +377,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     green1: {
         type: "property",
         id: "green1",
+        category: "green",
         index: 31,
         purchasePrice: 300,
         housePrice: 200,
@@ -334,6 +391,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     green2: {
         type: "property",
         id: "green2",
+        category: "green",
         index: 32,
         purchasePrice: 300,
         housePrice: 200,
@@ -353,6 +411,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     green3: {
         type: "property",
         id: "green3",
+        category: "green",
         index: 34,
         purchasePrice: 320,
         housePrice: 200,
@@ -379,6 +438,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     blue1: {
         type: "property",
         id: "blue1",
+        category: "blue",
         index: 37,
         purchasePrice: 350,
         housePrice: 200,
@@ -398,6 +458,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     blue2: {
         type: "property",
         id: "blue2",
+        category: "blue",
         index: 39,
         purchasePrice: 400,
         housePrice: 200,
@@ -451,6 +512,11 @@ export class GameMode {
         GameRules.Addon = new GameMode();
     }
 
+    private currentDecks: Record<"chance"|"communitybreast", CardAction[]> = {
+        chance: [...CardDeck.chance],
+        communitybreast: [...CardDeck.communitybreast],
+    }
+
     constructor() {
         this.configure();
         ListenToGameEvent(
@@ -464,6 +530,119 @@ export class GameMode {
         CustomGameEventManager.RegisterListener("monopolis_requestrenovation", (user, event) => this.ApplyRenovation(user, event));
         CustomGameEventManager.RegisterListener("monopolis_requestpayrent", (user, event) => this.PayRent(user, event));
         CustomGameEventManager.RegisterListener("monopolis_requestauction", (user, event) => this.StartAuction(user, event));
+        CustomGameEventManager.RegisterListener("monopolis_requestcard", (user, event) => this.DrawCard(user, event));
+        CustomGameEventManager.RegisterListener("monopolis_acknowledgecard", (user, event) => this.AcknowledgeCard(user, event));
+    }
+    AcknowledgeCard(user: EntityIndex, event: { PlayerID: PlayerID; }): void {
+        let current = this.GetCurrentPlayerState();
+        if (!IsInToolsMode() && event.PlayerID !== current.pID) {return;}
+        if (current.turnState.type !== "card_result") {return;}
+        let card = current.turnState.card;
+        switch(card.type) {
+            case "jail":
+                this.GotoJail();
+                return;
+            case "money_gain":
+                current.money += card.value;
+                this.SavePlayer(current);
+                break;
+            case "money_gain_others":
+                let playerCountGain = 0;
+                for (let i = 0; i < DOTA_MAX_PLAYERS; i++) {
+                    if (i === current.pID) continue;
+                    if (PlayerResource.IsValidPlayer(i)) {
+                        let playerState = CustomNetTables.GetTableValue("player_state", tostring(i));
+                        // TODO: Handle bankrupt scenario
+                        // TODO handle players already dead
+                        playerState.money -= card.value;
+                        this.SavePlayer(playerState);
+                        playerCountGain++;
+                    }
+                }
+                current.money += (card.value * playerCountGain);
+                this.SavePlayer(current);
+                break;
+            case "money_lose":
+                current.money -= card.value;
+                this.SavePlayer(current);
+                break;
+            case "money_lose_others":
+                let playerCountLose = 0;
+                for (let i = 0; i < DOTA_MAX_PLAYERS; i++) {
+                    if (i === current.pID) continue;
+                    if (PlayerResource.IsValidPlayer(i)) {
+                        let playerState = CustomNetTables.GetTableValue("player_state", tostring(i));
+                        // TODO handle players already dead
+                        playerState.money += card.value;
+                        this.SavePlayer(playerState);
+                        playerCountLose++;
+                    }
+                }
+                // TODO: Handle bankrupt scenario
+                current.money -= (card.value * playerCountLose);
+                this.SavePlayer(current);
+                break;
+            case "repairs":
+                print("Fuck repairs");
+                break;
+            case "teleport":
+                this.MoveForwardToLocation(TilesObj[card.dest].index);
+                return;
+            case "teleport_category":
+                let destinations = Object.values(TilesObj).filter(row => row.type === (card as TeleportCategoryCardAction).dest);
+                destinations.sort((a,b) => a.index - b.index);
+                let dest = destinations[0];
+                print(current.location);
+                DeepPrintTable(destinations);
+                for (let destination of destinations) {
+                    if (current.location < destination.index) {
+                        print("Changing destination to ", dest.id);
+                        dest = destination;
+                        break;
+                    }
+                }
+                print("Moving to ", dest.id);
+                this.MoveForwardToLocation(dest.index);
+                return;
+            case "teleport_relative":
+                if (card.value >= 0)
+                    this.MoveForwardToLocation(current.location + card.value);
+                else
+                    this.MoveBackwardToLocation(current.location + card.value);
+                return;
+        }
+        CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID, rolls: current.turnState.rolls});
+    }
+    DrawCard(user: EntityIndex, event: { PlayerID: PlayerID; }): void {
+        try {  
+            let current = this.GetCurrentPlayerState();
+            print("Draw card?");
+            DeepPrintTable(current);
+            if (!IsInToolsMode() && event.PlayerID !== current.pID) {return;}
+            if (current.turnState.type !== "card_prompt") {return;}
+            print("-1");
+            let card = this.currentDecks[current.turnState.deck].shift();
+            print("A");
+            if (!card)  {
+                print("Why is the deck empty");
+                return;
+            }
+            print("B");
+            if (card.type !== "fuckjail") {
+                print("B1");
+                this.currentDecks[current.turnState.deck].push(card);
+                print("B2");
+            } else {
+                print("C");
+                // TODO: Work out how we are going to keep it
+            }
+            print("D");
+            CustomNetTables.SetTableValue("misc", "current_turn", {type: "card_result", pID: current.pID, rolls: current.turnState.rolls, card});
+            print("E");
+        } catch (e) {
+            print(e);
+        }
+        print("F?");
     }
     ApplyRenovation(user: EntityIndex, event: { property: PurchasableTiles; houseCount: number; PlayerID: PlayerID; }): void {
         let current = this.GetCurrentPlayerState();
@@ -622,6 +801,12 @@ export class GameMode {
             "monopolis_price_definitions",
             TilesObj
         );
+        CustomNetTables.SetTableValue("misc", "housing_market", {houses: 32, hotels: 12});
+
+        this.currentDecks = {
+            chance: ShuffleArray([...CardDeck.chance]),
+            communitybreast: ShuffleArray([...CardDeck.communitybreast]),
+        }
 
         let go = Entities.FindByName(undefined,"go");
         if (!go) {
@@ -634,7 +819,7 @@ export class GameMode {
             if (this.IsPurchasableTile(tile)) {
                 CustomNetTables.SetTableValue("property_ownership", tile.id, {
                     houseCount: 0,
-                    owner: -1
+                    owner: (tile.id === "teal1" || tile.id === "teal2" || tile.id === "teal3") ? 0 : -1,
                 });
             }
         }
@@ -785,8 +970,10 @@ export class GameMode {
         // Anti Cheat, its just this simple
         if (!IsInToolsMode() && event.PlayerID !== current.pID) {return;}
 
-        let dice1 = RandomInt(1, 6);
-        let dice2 = RandomInt(1, 6);
+        //let dice1 = RandomInt(1, 6);
+        //let dice2 = RandomInt(1, 6);
+        let dice1 = 10;
+        let dice2 = 12;
         current.turnState.rolls = [...current.turnState.rolls, {dice1,dice2}];
 
         // We are in jail and did NOT get doubles :(
@@ -827,7 +1014,13 @@ export class GameMode {
             this.MoveForwardToLocation(futureLocation);
         }
     }
-    public MoveForwardToLocation(futureLocation: number) {
+    public MoveBackwardToLocation(futureLocation: number) {
+        if (futureLocation < 0) {
+            futureLocation = 40 + futureLocation;
+        }
+        return this.MoveForwardToLocation(futureLocation, true);
+    }
+    public MoveForwardToLocation(futureLocation: number, backwards = false) {
         let current = this.GetCurrentPlayerState();
         let currentPlayer = PlayerResource.GetPlayer(current.pID);
         if (!currentPlayer) {
@@ -836,27 +1029,38 @@ export class GameMode {
         }
         let currentHero = currentPlayer.GetAssignedHero();
 
-        if (current.location > futureLocation) {
+        if (current.location > futureLocation && !backwards) {
             print("We are spawning go??");
             let pos = this.GetStartLocationOfTile(0);
             CreateModifierThinker(currentHero, undefined, modifier_gomoney.name, { duration: -1}, pos, currentHero.GetTeam(), false);
         }
 
         let position = this.GetStartLocationOfTile(current.location);
-        let firstMovement = true;
         do {
             let futureSide = math.floor(futureLocation / 10);
             let currentSide = math.floor(current.location / 10);
+            // when going backwards, we need to treat corners as the previous side, not same side
+            if (backwards) {
+                futureSide = math.floor((futureLocation - 1) / 10); // 19 - 1 = 18 / 10 = 1
+                currentSide = math.floor((current.location - 1) / 10); // 21 - 1 = 20 / 10 = 2
+            }
 
             let currentDelta = current.location % 10;
+            if (backwards && currentDelta === 0) {
+                currentDelta = 10;
+            }
             let futureDelta = futureLocation % 10;
 
             let rowAmount: number;
             if (currentSide === futureSide) {
                 rowAmount = futureDelta - currentDelta;
+            } else if (backwards) {
+                    rowAmount = -currentDelta;
             } else {
                 rowAmount = 10 - currentDelta;
             }
+
+            DeepPrintTable({futureSide, currentSide, currentDelta, futureDelta, rowAmount});
             let sameSideVector: Vector;
             if (currentSide === 0) {
                 sameSideVector = Vector(rowAmount * -400, 0, 0);
@@ -868,16 +1072,13 @@ export class GameMode {
                 sameSideVector = Vector(0, rowAmount * -400, 0);
             }
             position = (position + sameSideVector) as Vector;
-            print("Pre Order", firstMovement);
             ExecuteOrderFromTable({
                 OrderType: UnitOrder.MOVE_TO_POSITION,
                 UnitIndex: currentHero.GetEntityIndex(),
                 Position: position,
-                Queue: !firstMovement,
+                Queue: true,
             });
-            print("Post Order", firstMovement);
             current.location = (current.location + rowAmount) % 40;
-            firstMovement = false;
             print(current.location, futureLocation);
         } while (current.location !== futureLocation);
         this.SavePlayer(current);
@@ -891,8 +1092,7 @@ export class GameMode {
     public FoundHeroForGold() {
         let current = this.GetCurrentPlayerState();
         current.money += 200;
-        delete (current as any).turnState;
-        CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
+        this.SavePlayer(current);
     }
     public FoundHero() {
         let current = this.GetCurrentPlayerState();
@@ -907,7 +1107,11 @@ export class GameMode {
             if (propertyState.owner > -1 && propertyState.owner !== current.pID && propertyState.houseCount >= 0) {
                 print("Well you need to pay up now");
                 const price = this.CalculateRent(tile, current, propertyState);
-                CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "payrent", rolls: current.turnState.rolls, property: tile.id, price});
+                if (Number.isNaN(price)) {
+
+                } else {
+                    CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "payrent", rolls: current.turnState.rolls, property: tile.id, price});
+                }
             }
             else if (propertyState.owner === -1) {
                 CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "unowned", rolls: current.turnState.rolls, property: tile.id});
@@ -917,6 +1121,8 @@ export class GameMode {
             }
         } else if (tile.type === "tax") {
             CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "payrent", rolls: current.turnState.rolls, property: tile.id, price: tile.cost});
+        } else if (tile.type === "card") {
+            CustomNetTables.SetTableValue("misc", "current_turn", {type: "card_prompt", pID: current.pID, rolls: current.turnState.rolls, deck: tile.deck});
         } else if (tile.id === "gotojail") {
             this.GotoJail();
         } else {
@@ -927,11 +1133,40 @@ export class GameMode {
     }
 
     public CalculateRent(tile: PropertyDefinition | UtilityDefinition | RailroadDefinition, current: PlayerState, propertyState: PropertyOwnership): number {
+        print(tile, current, propertyState);
+        let turnState = CustomNetTables.GetTableValue("misc", "current_turn");
         if (propertyState.houseCount === -1) { 
             return 0;
         }
         if (tile.type === "property") {
-            // TODO: monopoly, houses etc
+            let properties = Object.values(TilesObj).filter(row => row.type === "property" && row.category === tile.category) as PropertyDefinition[];
+            let owners = properties.map(row => [row, CustomNetTables.GetTableValue("property_ownership", row.id)]) as [PropertyDefinition, PropertyOwnership][];
+            DeepPrintTable(owners);
+            let isMonopoly = true;
+            for (let owner of owners) {
+                if (owner[1].owner !== propertyState.owner) {
+                    print(owner);
+                    isMonopoly = false;
+                    break;
+                }
+            }
+            print(isMonopoly);
+            if (isMonopoly) {
+                switch(propertyState.houseCount) {
+                    case 5:
+                        return tile.hotelPrice;
+                    case 4:
+                        return tile.house4Price;
+                    case 3:
+                        return tile.house3Price;
+                    case 2:
+                        return tile.house2Price;
+                    case 1:
+                        return tile.house1Price;
+                    case 0:
+                        return tile.rentPrice * 2;
+                }
+            }
             return tile.rentPrice;
         }
         else if (tile.type === "railroad") {
@@ -942,9 +1177,12 @@ export class GameMode {
                 CustomNetTables.GetTableValue("property_ownership", "railroad4")
             ];
             let ownedRailroads = railroads.filter(railroad => railroad.owner === propertyState.owner).length;
-            return tile.prices[ownedRailroads - 1];
+            let price = tile.prices[ownedRailroads - 1];
+            if (turnState.type === "card_result" && turnState.card.type === "teleport_category") {
+                return price * 2;
+            }
+            return price;
         } else {
-            let turnState = CustomNetTables.GetTableValue("misc", "current_turn");
             if (turnState.type === "diceroll") {
                 let diceSum = turnState.dice1 + turnState.dice2;
                 let railroads = [
@@ -953,6 +1191,8 @@ export class GameMode {
                 ];
                 let ownedUtilities = railroads.filter(railroad => railroad.owner === propertyState.owner).length;
                 return tile.multipliers[ownedUtilities - 1] * diceSum;
+            } else if (turnState.type === "card_result") {
+                return Number.NaN;
             } else {
                 throw "wtf why is it not diceroll state";
             }
@@ -1030,4 +1270,23 @@ export class GameMode {
         print("Script reloaded!");
         this.StartGame();
     }
+}
+
+function ShuffleArray<T>(array: T[]): T[] {
+    let currentIndex = array.length
+    let randomIndex: number;
+
+    // While there remain elements to shuffle...
+    while (currentIndex != 0) {
+  
+      // Pick a remaining element...
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex--;
+  
+      // And swap it with the current element.
+      [array[currentIndex], array[randomIndex]] = [
+        array[randomIndex], array[currentIndex]];
+    }
+  
+    return array;
 }

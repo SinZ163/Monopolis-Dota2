@@ -16,21 +16,24 @@ CustomNetTables.SubscribeNetTableListener("property_ownership", (_, tile, value)
     if (tile !== indicatorname) return;
     $.Msg("Property Ownership changed", tile, value);
     if (value.owner > -1) {
+        $.Msg("Found owner", tile, value.owner);
         let colour = ColorToHexCode(Players.GetPlayerColor(value.owner));
         $.GetContextPanel().style.backgroundColor = colour;
     } else {
+        $.Msg("No owner :(", tile, value.owner);
         $.GetContextPanel().style.backgroundColor = "#FFFFFF";
     }
 })
 
 CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
     if (key !== "current_turn") return;
-    if (value.type === "start" || value.type === "jailed") {
-        if (value.indicators[indicatorname] !== undefined) {
+    let turnState = value as TurnState;
+    if (turnState.type === "start" || turnState.type === "jailed") {
+        if (turnState.indicators[indicatorname] !== undefined) {
             $.GetContextPanel().RemoveClass("Hidden");
-            ($("#IndicatorText") as LabelPanel).text = value.indicators[indicatorname]!.toFixed(0);
+            ($("#IndicatorText") as LabelPanel).text = turnState.indicators[indicatorname]!.toFixed(0);
         }
-    } else if (value.type === "endturn") {
+    } else if (turnState.type === "endturn") {
         $.GetContextPanel().AddClass("Hidden");
     }
 });

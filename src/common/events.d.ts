@@ -23,6 +23,8 @@ interface CustomGameEventDeclarations {
     monopolis_requestauction: MonopolisEmptyEvent, //C-->S
     monopolis_requestpurchase: MonopolisEmptyEvent, //C-->S
     monopolis_requestrenovation: MonopolisRenovationEvent,  //C-->S
+    monopolis_requestcard: MonopolisEmptyEvent, //C-->S
+    monopolis_acknowledgecard: MonopolisEmptyEvent,
     // Available in state endturn
     monopolis_endturn: MonopolisEmptyEvent, //C-->S
 }
@@ -33,6 +35,10 @@ interface CustomNetTableDeclarations {
     misc: {
         current_turn: TurnState
         roll_order: Record<string, PlayerID>,
+        housing_market: {
+            houses: number,
+            hotels: number,
+        }
     }
 }
 
