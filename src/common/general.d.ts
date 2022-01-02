@@ -102,6 +102,7 @@ interface PropertyDefinition extends BaseDefinition {
     house3Price: number;
     house4Price: number;
     hotelPrice: number;
+    categoryId: number;
 }
 interface TaxDefinition extends BaseDefinition {
     type: "tax";
@@ -113,12 +114,14 @@ interface RailroadDefinition extends BaseDefinition {
     id: RailroadTiles;
     purchasePrice: number;
     prices: number[];
+    categoryId: number;
 }
 interface UtilityDefinition extends BaseDefinition {
     type: "utility";
     id: UtilityTiles;
     purchasePrice: number;
     multipliers: number[];
+    categoryId: number;
 }
 
 interface CardDefinition extends BaseDefinition {
@@ -165,6 +168,11 @@ interface UnOwnedState extends BaseState {
     type: "unowned";
     property: PurchasableTiles;
 }
+interface AuctionTurnState extends BaseState {
+    type: "auction";
+    property: PurchasableTiles;
+}
+
 interface CardPendingState extends BaseState {
     type: "card_prompt",
     deck: Deck
@@ -174,7 +182,19 @@ interface CardResultState extends BaseState {
     card: CardAction,
 }
 
-type TurnState = TransitionTurnState | JailedState | StartTurnState | DiceRollState | PayRentState | UnOwnedState | EndTurnState | CardPendingState | CardResultState;
+interface AuxRollPromptState extends BaseState {
+    type: "auxroll_prompt",
+    card: CardAction,
+}
+interface AuxRollResultState extends BaseState {
+    type: "auxroll_result",
+    card: CardAction,
+    dice1: number,
+    dice2: number,
+    value: number
+}
+
+type TurnState = TransitionTurnState | JailedState | StartTurnState | DiceRollState | PayRentState | UnOwnedState | AuctionTurnState | EndTurnState | CardPendingState | CardResultState | AuxRollPromptState | AuxRollResultState;
 
 interface BaseCardAction {
     text: string
@@ -224,3 +244,18 @@ interface RepairsCardAction extends BaseCardAction {
 }
 
 type CardAction = TeleportCardAction | TeleportCategoryCardAction | TeleportRelativeCardAction | MoneyGainCardAction | MoneyLoseCardAction | MoneyGainOthersCardAction | MoneyLoseOthersCardAction | GOTOJailCardAction | FUCKJailCardAction | RepairsCardAction;
+
+interface AuctionPlayerState {
+    hasWithdrawn: boolean
+}
+interface AuctionState {
+    current_bid: number,
+    current_bidder: PlayerID,
+    current_owner: PlayerID,
+    
+    playerStates: Partial<Record<PlayerID, AuctionPlayerState>>,    
+    historical_bids: Array<{
+        pID: PlayerID,
+        amount: number
+    }>
+}

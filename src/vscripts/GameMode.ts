@@ -13,29 +13,29 @@ declare global {
 
 const CardDeck: Record<"chance"|"communitybreast", CardAction[]> = {
     "chance": [
-        //{type: "teleport", dest: "go", text: "card_adv_go"},
-        //{type: "teleport", dest: "red3", text: "card_adv"},
-        //{type: "teleport", dest: "magenta1", text: "card_adv"},
+        {type: "teleport", dest: "go", text: "card_adv_go"},
+        {type: "teleport", dest: "red3", text: "card_adv"},
+        {type: "teleport", dest: "magenta1", text: "card_adv"},
         {type: "teleport_category", dest: "utility", text: "card_adv_utility"},
         {type: "teleport_category", dest: "railroad", text: "card_adv_railroad"}, // intentionally repeated
-        //{type: "teleport_category", dest: "railroad", text: "card_adv_railroad"},
-        //{type: "money_gain", value: 50, text: "CHANCE_BankDividend"},
+        {type: "teleport_category", dest: "railroad", text: "card_adv_railroad"},
+        {type: "money_gain", value: 50, text: "CHANCE_BankDividend"},
         //{type: "fuckjail", text: "card_fuckjail_text"},
-        //{type: "teleport_relative", value: -3, text: "card_adv_relative_back"},
-        //{type: "jail", text: "card_jail_text"},
+        {type: "teleport_relative", value: -3, text: "card_adv_relative_back"},
+        {type: "jail", text: "card_jail_text"},
         //{type: "repairs", house: 25, hotel: 100, text: "CHANCE_GeneralRepairs"},
-        //{type: "money_lose", value: 15, text: "CHANCE_Speeding"},
-        //{type: "teleport", dest: "railroad1", text: "card_adv_railroad1"},
-        //{type: "teleport", dest: "blue2", text: "card_adv_blue2"},
-        //{type: "money_lose_others", value: 50, text: "CHANCE_Chairman"},
-        //{type: "money_gain", value: 150, text: "CHANCE_BuildingLoan"},
+        {type: "money_lose", value: 15, text: "CHANCE_Speeding"},
+        {type: "teleport", dest: "railroad1", text: "card_adv_railroad1"},
+        {type: "teleport", dest: "blue2", text: "card_adv_blue2"},
+        {type: "money_lose_others", value: 50, text: "CHANCE_Chairman"},
+        {type: "money_gain", value: 150, text: "CHANCE_BuildingLoan"},
     ],
     "communitybreast": [
         {type: "teleport", dest: "go", text: "card_adv_go"},
         {type: "money_gain", value: 200, text: "COMMUNITYBREAST_BankError"},
         {type: "money_lose", value: 50, text: "COMMUNITYBREAST_Doctor"},
         {type: "money_gain", value: 50, text: "COMMUNITYBREAST_Stock"},
-        {type: "fuckjail", text: "card_fuckjail_text"},
+        //{type: "fuckjail", text: "card_fuckjail_text"},
         {type: "jail", text: "card_jail_text"},
         {type: "money_gain", value: 100, text: "COMMUNITYBREAST_HolidaySeason"},
         {type: "money_gain", value: 20, text: "COMMUNITYBREAST_Income"},
@@ -44,7 +44,7 @@ const CardDeck: Record<"chance"|"communitybreast", CardAction[]> = {
         {type: "money_lose", value: 50, text: "COMMUNITYBREAST_Hospital"},
         {type: "money_lose", value: 50, text: "COMMUNITYBREAST_School"},
         {type: "money_gain", value: 25, text: "COMMUNITYBREAST_Consultancy"},
-        {type: "repairs", house: 40, hotel: 115, text: "COMMUNITYBREAST_StreetRepairs"},
+        //{type: "repairs", house: 40, hotel: 115, text: "COMMUNITYBREAST_StreetRepairs"},
         {type: "money_gain", value: 10, text: "COMMUNITYBREAST_Beauty"},
         {type: "money_gain", value: 100, text: "COMMUNITYBREAST_Inherit"},
     ],
@@ -59,6 +59,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     brown1: {
         type: "property",
         category: "brown",
+        categoryId: 0,
         id: "brown1",
         index: 1,
         purchasePrice: 60,
@@ -80,6 +81,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "brown2",
         category: "brown",
+        categoryId: 0,
         index: 3,
         purchasePrice: 60,
         housePrice: 50,
@@ -99,6 +101,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     railroad1: {
         type: "railroad",
         id: "railroad1",
+        categoryId: 9,
         index: 5,
         purchasePrice: 200,
         prices: [25, 50, 100, 200]
@@ -107,6 +110,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "teal1",
         category: "teal",
+        categoryId: 1,
         index: 6,
         purchasePrice: 100,
         housePrice: 50,
@@ -127,6 +131,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "teal2",
         category: "teal",
+        categoryId: 1,
         index: 8,
         purchasePrice: 100,
         housePrice: 50,
@@ -141,6 +146,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "teal3",
         category: "teal",
+        categoryId: 1,
         index: 9,
         purchasePrice: 120,
         housePrice: 50,
@@ -160,6 +166,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "magenta1",
         category: "magenta",
+        categoryId: 2,
         index: 11,
         purchasePrice: 140,
         housePrice: 100,
@@ -173,6 +180,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     utility1: {
         type: "utility",
         id: "utility1",
+        categoryId: 8,
         index: 12,
         purchasePrice: 150,
         multipliers: [4, 10]
@@ -181,6 +189,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "magenta2",
         category: "magenta",
+        categoryId: 2,
         index: 13,
         purchasePrice: 140,
         housePrice: 100,
@@ -195,6 +204,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "magenta3",
         category: "magenta",
+        categoryId: 2,
         index: 14,
         purchasePrice: 160,
         housePrice: 100,
@@ -208,6 +218,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     railroad2: {
         type: "railroad",
         id: "railroad2",
+        categoryId: 9,
         index: 15,
         purchasePrice: 200,
         prices: [25, 50, 100, 200]
@@ -216,6 +227,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "orange1",
         category: "orange",
+        categoryId: 3,
         index: 16,
         purchasePrice: 180,
         housePrice: 100,
@@ -236,6 +248,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "orange2",
         category: "orange",
+        categoryId: 3,
         index: 18,
         purchasePrice: 180,
         housePrice: 100,
@@ -250,6 +263,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "orange3",
         category: "orange",
+        categoryId: 3,
         index: 19,
         purchasePrice: 200,
         rentPrice: 16,
@@ -269,6 +283,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "red1",
         category: "red",
+        categoryId: 4,
         index: 21,
         purchasePrice: 220,
         housePrice: 150,
@@ -289,6 +304,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "red2",
         category: "red",
+        categoryId: 4,
         index: 23,
         purchasePrice: 220,
         housePrice: 150,
@@ -303,6 +319,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "red3",
         category: "red",
+        categoryId: 4,
         index: 24,
         purchasePrice: 240,
         housePrice: 150,
@@ -316,6 +333,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     railroad3: {
         type: "railroad",
         id: "railroad3",
+        categoryId: 9,
         index: 25,
         purchasePrice: 200,
         prices: [25, 50, 100, 200]
@@ -324,6 +342,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "yellow1",
         category: "yellow",
+        categoryId: 5,
         index: 26,
         purchasePrice: 260,
         housePrice: 150,
@@ -338,6 +357,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "yellow2",
         category: "yellow",
+        categoryId: 5,
         index: 27,
         purchasePrice: 260,
         housePrice: 150,
@@ -351,6 +371,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     utility2: {
         type: "utility",
         id: "utility2",
+        categoryId: 8,
         index: 28,
         purchasePrice: 150,
         multipliers: [4, 10]
@@ -359,6 +380,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "yellow3",
         category: "yellow",
+        categoryId: 5,
         index: 29,
         purchasePrice: 280,
         housePrice: 150,
@@ -378,6 +400,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "green1",
         category: "green",
+        categoryId: 6,
         index: 31,
         purchasePrice: 300,
         housePrice: 200,
@@ -392,6 +415,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "green2",
         category: "green",
+        categoryId: 6,
         index: 32,
         purchasePrice: 300,
         housePrice: 200,
@@ -412,6 +436,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "green3",
         category: "green",
+        categoryId: 6,
         index: 34,
         purchasePrice: 320,
         housePrice: 200,
@@ -425,6 +450,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
     railroad4: {
         type: "railroad",
         id: "railroad4",
+        categoryId: 9,
         index: 35,
         purchasePrice: 200,
         prices: [25, 50, 100, 200]
@@ -439,6 +465,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "blue1",
         category: "blue",
+        categoryId: 7,
         index: 37,
         purchasePrice: 350,
         housePrice: 200,
@@ -459,6 +486,7 @@ const TilesObj: Record<Tiles,SpaceDefinition> = {
         type: "property",
         id: "blue2",
         category: "blue",
+        categoryId: 7,
         index: 39,
         purchasePrice: 400,
         housePrice: 200,
@@ -532,10 +560,109 @@ export class GameMode {
         CustomGameEventManager.RegisterListener("monopolis_requestauction", (user, event) => this.StartAuction(user, event));
         CustomGameEventManager.RegisterListener("monopolis_requestcard", (user, event) => this.DrawCard(user, event));
         CustomGameEventManager.RegisterListener("monopolis_acknowledgecard", (user, event) => this.AcknowledgeCard(user, event));
+        CustomGameEventManager.RegisterListener("monopolis_auctionbid", (user, event) => this.AuctionBid(user, event));
+        CustomGameEventManager.RegisterListener("monopolis_auctionwithdraw", (user, event) => this.AuctionWithdraw(user, event));
+    }
+    GetAuctionState(): AuctionState {
+        let auctionState = CustomNetTables.GetTableValue("misc", "auction");
+        let newPlayerStates: Partial<Record<PlayerID, AuctionPlayerState>> = {};
+        for (let [pID,player] of Object.entries(auctionState.playerStates)) {
+            newPlayerStates[tonumber(pID) as PlayerID] = {
+                hasWithdrawn: player.hasWithdrawn === 1,
+            }
+        }
+        return {
+            current_bid: auctionState.current_bid,
+            current_bidder: auctionState.current_bidder,
+            current_owner: auctionState.current_owner,
+            historical_bids: toArray(auctionState.historical_bids),
+            playerStates: newPlayerStates
+        }
+    }
+    AdvanceAuctionTurn(auctionState: AuctionState) {
+        let rollOrder = CustomNetTables.GetTableValue("misc", "roll_order");
+        do {
+            let currentIndex = Object.values(rollOrder).find(pID => auctionState.current_bidder === pID);
+            if (!currentIndex) { 
+                throw "Can't find the index :(";
+            }
+            auctionState.current_bidder = rollOrder[tostring((currentIndex + 1) % Object.keys(rollOrder).length)];
+        } while(auctionState.playerStates[auctionState.current_bidder]!.hasWithdrawn);
+        CustomNetTables.SetTableValue("misc", "auction", auctionState);
+    }
+    AuctionWithdraw(user: EntityIndex, event: { PlayerID: PlayerID; }): void {
+        let current = this.GetCurrentPlayerState();
+        DeepPrintTable(current);
+        if (current.turnState.type !== "auction") return;
+        let auctionState = this.GetAuctionState();
+        DeepPrintTable(auctionState);
+        if (!IsInToolsMode() && auctionState.current_bidder !== event.PlayerID) return;
+        print("Lets play?");
+        let playerState = auctionState.playerStates[auctionState.current_bidder];
+        if (!playerState) {
+            print("wtf?");
+            return;
+        }
+        playerState.hasWithdrawn = true;
+
+        let allWithdrawn = true;
+        for (let player of Object.values(auctionState.playerStates)) {
+            if (!player.hasWithdrawn) {
+                allWithdrawn = false;
+                break;
+            }
+        }
+        if (allWithdrawn) {
+            print("All withdrawn");
+            // TODO: End auction 
+            if (auctionState.current_owner === -1) {
+                FireGameEvent("dota_hud_error_message", { reason: 80, message: "#monopolis_auction_failed"});
+            } else {
+                let bidder = CustomNetTables.GetTableValue("player_state", tostring(auctionState.current_owner));
+                bidder.money -= auctionState.current_bid;
+                let property = CustomNetTables.GetTableValue("property_ownership", current.turnState.property);
+                property.owner = auctionState.current_owner;
+                CustomNetTables.SetTableValue("property_ownership", current.turnState.property, property);
+                this.SavePlayer(bidder);
+            }
+            CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID, rolls: current.turnState.rolls});
+        } else {
+            this.AdvanceAuctionTurn(auctionState);
+        }
+    }
+    AuctionBid(user: EntityIndex, event: { amount: 10 | 50 | 100; PlayerID: PlayerID; }): void {
+        let current = this.GetCurrentPlayerState();
+        if (current.turnState.type !== "auction") return;
+        let auctionState = this.GetAuctionState();
+        if (!IsInToolsMode() && auctionState.current_bidder !== event.PlayerID) return;
+        if ((event.amount + auctionState.current_bid) > current.money) {
+            FireGameEvent("dota_hud_error_message", { reason: 80, message: "#monopolis_auction_broke" });
+            return;
+        }
+        auctionState.historical_bids.push({
+            amount: event.amount,
+            pID: auctionState.current_bidder,
+        });
+        auctionState.current_bid += event.amount;
+        auctionState.current_owner = auctionState.current_bidder;
+        this.AdvanceAuctionTurn(auctionState);
     }
     AcknowledgeCard(user: EntityIndex, event: { PlayerID: PlayerID; }): void {
         let current = this.GetCurrentPlayerState();
         if (!IsInToolsMode() && event.PlayerID !== current.pID) {return;}
+        if (current.turnState.type === "auxroll_result") {
+            // TODO: Handle bankrupt scenario
+            current.money -= current.turnState.value;
+            let tile = TilesReverseLookup[current.location];
+            tile
+            let propertyOwnership = CustomNetTables.GetTableValue("property_ownership", TilesReverseLookup[current.location] as PurchasableTiles);
+            let owner = CustomNetTables.GetTableValue("player_state", tostring(propertyOwnership.owner));
+            owner.money += current.turnState.value;
+            CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID, rolls: current.turnState.rolls});
+            this.SavePlayer(current);
+            this.SavePlayer(owner);
+            return;
+        }
         if (current.turnState.type !== "card_result") {return;}
         let card = current.turnState.card;
         switch(card.type) {
@@ -592,16 +719,12 @@ export class GameMode {
                 let destinations = Object.values(TilesObj).filter(row => row.type === (card as TeleportCategoryCardAction).dest);
                 destinations.sort((a,b) => a.index - b.index);
                 let dest = destinations[0];
-                print(current.location);
-                DeepPrintTable(destinations);
                 for (let destination of destinations) {
                     if (current.location < destination.index) {
-                        print("Changing destination to ", dest.id);
                         dest = destination;
                         break;
                     }
                 }
-                print("Moving to ", dest.id);
                 this.MoveForwardToLocation(dest.index);
                 return;
             case "teleport_relative":
@@ -614,67 +737,189 @@ export class GameMode {
         CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID, rolls: current.turnState.rolls});
     }
     DrawCard(user: EntityIndex, event: { PlayerID: PlayerID; }): void {
-        try {  
-            let current = this.GetCurrentPlayerState();
-            print("Draw card?");
-            DeepPrintTable(current);
-            if (!IsInToolsMode() && event.PlayerID !== current.pID) {return;}
-            if (current.turnState.type !== "card_prompt") {return;}
-            print("-1");
-            let card = this.currentDecks[current.turnState.deck].shift();
-            print("A");
-            if (!card)  {
-                print("Why is the deck empty");
-                return;
-            }
-            print("B");
-            if (card.type !== "fuckjail") {
-                print("B1");
-                this.currentDecks[current.turnState.deck].push(card);
-                print("B2");
-            } else {
-                print("C");
-                // TODO: Work out how we are going to keep it
-            }
-            print("D");
-            CustomNetTables.SetTableValue("misc", "current_turn", {type: "card_result", pID: current.pID, rolls: current.turnState.rolls, card});
-            print("E");
-        } catch (e) {
-            print(e);
+        let current = this.GetCurrentPlayerState();
+        if (!IsInToolsMode() && event.PlayerID !== current.pID) {return;}
+        if (current.turnState.type !== "card_prompt") {return;}
+        let card = this.currentDecks[current.turnState.deck].shift();
+        if (!card)  {
+            print("Why is the deck empty");
+            return;
         }
-        print("F?");
+        if (card.type !== "fuckjail") {
+            this.currentDecks[current.turnState.deck].push(card);
+        } else {
+            // TODO: Work out how we are going to keep it
+        }
+        CustomNetTables.SetTableValue("misc", "current_turn", {type: "card_result", pID: current.pID, rolls: current.turnState.rolls, card});
     }
     ApplyRenovation(user: EntityIndex, event: { property: PurchasableTiles; houseCount: number; PlayerID: PlayerID; }): void {
         let current = this.GetCurrentPlayerState();
         if (!IsInToolsMode() && event.PlayerID !== current.pID) {return;}
 
-        let tile = TilesObj[event.property] as PropertyDefinition;
+        let tile = TilesObj[event.property] as (RailroadDefinition | UtilityDefinition | PropertyDefinition);
         let propertyState = CustomNetTables.GetTableValue("property_ownership", tile.id);
 
         // Asserts its ownable and if it is, its the current player
         if (propertyState?.owner !== current.pID) { return; }
 
-        if (propertyState.houseCount === 0) {
-            if (event.houseCount === -1) {
-                // 0 => -1, we are mortgaging and need to grant money
+        let commonLogicUsed = false;
+        if (propertyState.houseCount === 0 && event.houseCount === -1) {
+            // 0 => -1, we are mortgaging
+            current.money += tile.purchasePrice / 2;
+            propertyState.houseCount = -1;
+            commonLogicUsed = true;
+        } else if (propertyState.houseCount === -1 && event.houseCount === 0) {
+            // -1 => 0, we are unmortgaging and should take the money + 10% fee
+            let cost = (tile.purchasePrice / 2) * 1.10;
+            if (current.money < cost) {
+                FireGameEvent("dota_hud_error_message", { reason: 80, message: "#monopolis_property_broke" });
+                return;
+            }
+            current.money -= cost;
+            propertyState.houseCount = 0;
+            commonLogicUsed = true;
+        }
+
+        if (tile.type === "property") {
+            let properties = Object.values(TilesObj).filter(row => row.type === "property" && row.category === (tile as PropertyDefinition).category) as PropertyDefinition[];
+            let owners = properties.map(row => [row, CustomNetTables.GetTableValue("property_ownership", row.id)]) as [PropertyDefinition, PropertyOwnership][];
+            let isMonopoly = true;
+            let minHouseCount = math.huge;
+            let maxHouseCount = -1 * math.huge;
+            for (let owner of owners) {
+                if (owner[1].owner !== propertyState.owner) {
+                    isMonopoly = false;
+                } else {
+                    if (owner[1].houseCount < minHouseCount) {
+                        minHouseCount = owner[1].houseCount;
+                    }
+                    if (owner[1].houseCount > maxHouseCount) {
+                        maxHouseCount = owner[1].houseCount;
+                    }
+                }
+            }
+            let currentDelta = maxHouseCount - minHouseCount;
+            if (currentDelta > 1) {
+                print("Wait what, this is illegal.");
+                return;
+            }
+            
+            let delta = event.houseCount - propertyState.houseCount;
+            // Bound houseCount to legal values
+            if (event.houseCount > 5 || event.houseCount < -1) {
+                print("Illegal");
+                return;
+            }
+            // Only allow increments of 1 or -1, OR -5
+            // TODO: Reconsider this when I allow "blueprint mode" property management
+            if (Math.abs(delta) > 1 && delta !== -5) {
+                print("Illegal");
+                return;
+            }
+            if (currentDelta > 0 && (event.houseCount > maxHouseCount || event.houseCount < minHouseCount)) {
+                FireGameEvent("dota_hud_error_message", { reason: 80, message: "#monopolis_property_buildevenly" });
+                return;
+            }
+            // If you don't have the monopoly fuck off
+            if (event.houseCount > 0 && !isMonopoly) {
+                FireGameEvent("dota_hud_error_message", { reason: 80, message: "#monopolis_property_needmonopoly" });
+                return;
+            }
+            let market = CustomNetTables.GetTableValue("misc", "housing_market");
+            
+            DeepPrintTable({propertyState, event, delta, market, tile});
+            if (propertyState.houseCount === 0 && event.houseCount === -1) {
                 current.money += tile.purchasePrice / 2;
                 propertyState.houseCount = -1;
-                this.SavePlayer(current);
-                CustomNetTables.SetTableValue("property_ownership", tile.id, propertyState);
-            }
-        } else if (propertyState.houseCount === -1) {
-            if (event.houseCount === 0) {
+            } else if (propertyState.houseCount === -1 && event.houseCount === 0) {
                 // -1 => 0, we are unmortgaging and should take the money + 10% fee
                 // TODO: Error if the user is poor
                 current.money -= (tile.purchasePrice / 2) * 1.10;
                 propertyState.houseCount = 0;
-                this.SavePlayer(current);
-                CustomNetTables.SetTableValue("property_ownership", tile.id, propertyState);
             }
+            // If you want houses and aren't going to a hotel, needs to have houses in the market
+            else if (event.houseCount != 5 && delta > 0 && market.houses < delta) {
+                FireGameEvent("dota_hud_error_message", { reason: 80, message: "#monopolis_property_marketcrash" });
+                return;
+            }
+            // If you want a hotel, need a hotel in the market
+            if (event.houseCount === 5 && delta > 0 && market.hotels < 1) {
+                FireGameEvent("dota_hud_error_message", { reason: 80, message: "#monopolis_property_marketcrash" });
+                return;
+            }
+            // If you are only removing the hotel and replacing with 4 houses, 4 houses need to be in the market
+            if (delta === -1 && propertyState.houseCount === 5 && market.houses < 4) {
+                FireGameEvent("dota_hud_error_message", { reason: 80, message: "#monopolis_property_marketcrash" });
+                return;
+            }
+            // if you want a house/hotel and are poor, go away
+            if (delta > 0 && current.money < tile.housePrice) {
+                FireGameEvent("dota_hud_error_message", { reason: 80, message: "#monopolis_property_broke" });
+                return;
+            }
+            // Sell the hotel and not put houses back on
+            if (delta === -5 && propertyState.houseCount === 5) {
+                market.hotels -= 1;
+                propertyState.houseCount = 0;
+                current.money += (tile.housePrice / 2) * 5;
+            }
+            // Buy a hotel (hotels are on the market, delta must be 1 and can afford it)
+            else if (event.houseCount === 5 && delta > 0) {
+                propertyState.houseCount = 5;
+                market.hotels -= 1;
+                market.houses += 4;
+                current.money -= tile.housePrice;
+            }
+            // Buy a house (cant be hotel, houses are on the market, delta must be 1 and can afford it)
+            else if (event.houseCount > 0 && propertyState.houseCount !== -1 && delta > 0) {
+                propertyState.houseCount += delta;
+                market.houses -= delta;
+                current.money -= tile.housePrice;
+            }
+            // Sell a house/hotel
+            else if (delta < 0 && event.houseCount !== -1) {
+                if (propertyState.houseCount === 5) {
+                    market.houses -= (5 + delta);
+                    market.hotels += 1;
+                } else {
+                    market.houses += delta;
+                }
+                propertyState.houseCount += delta;
+                current.money += (tile.housePrice / 2) * Math.abs(delta);
+            } else if (commonLogicUsed) {}
+            // 0 => -1, we are mortgaging and need to grant money
+            else {
+                print("Wait how did it make it this far");
+                return;
+            }
+            
+            CustomNetTables.SetTableValue("misc", "housing_market", market);
         }
+        
+        CustomNetTables.SetTableValue("property_ownership", tile.id, propertyState);
+        this.SavePlayer(current);
+        print("Saving the market, current property and player?");
     }
     StartAuction(user: EntityIndex, event: { PlayerID: PlayerID; }): void {
-        throw new Error("Method not implemented.");
+        let current = this.GetCurrentPlayerState();
+        if (!IsInToolsMode() && event.PlayerID !== current.pID) {return;}
+        if (current.turnState.type !== "unowned") {return;}
+
+        CustomNetTables.SetTableValue("misc", "current_turn", {type: "auction", pID: current.pID, rolls: current.turnState.rolls, property: current.turnState.property});
+        let playerStates: Partial<Record<PlayerID, AuctionPlayerState>> = {};
+        for (let i = 0; i < DOTA_MAX_PLAYERS; i++) {
+            if (PlayerResource.IsValidPlayer(i)) {
+                playerStates[i] = {hasWithdrawn: false}
+            }
+        }
+        CustomNetTables.SetTableValue("misc", "auction", {
+            current_bid: 0,
+            current_owner: -1,
+            current_bidder: current.pID,
+            historical_bids: [],
+            playerStates,
+        });
+        return;
     }
     PayRent(user: EntityIndex, event: { PlayerID: PlayerID; }): void {
         let current = this.GetCurrentPlayerState();
@@ -754,8 +999,12 @@ export class GameMode {
         for (let [k,v] of Object.entries(TeamColours)) {
             SetTeamCustomHealthbarColor(tonumber(k) as DotaTeam, v[0], v[1], v[2]);
         }
+        GameRules.GetGameModeEntity().SetCustomHeroMaxLevel(math.huge);
+        // GameRules.GetGameModeEntity().SetFreeCourierModeEnabled(true);
 
         GameRules.SetShowcaseTime(0);
+        GameRules.SetStrategyTime(0);
+        
         GameRules.SetHeroSelectionTime(heroSelectionTime);
     }
 
@@ -797,12 +1046,8 @@ export class GameMode {
 
     private StartGame(): void {
         print("Game starting!");
-        CustomGameEventManager.Send_ServerToAllClients(
-            "monopolis_price_definitions",
-            TilesObj
-        );
+        CustomNetTables.SetTableValue("misc", "price_definition", TilesObj);
         CustomNetTables.SetTableValue("misc", "housing_market", {houses: 32, hotels: 12});
-
         this.currentDecks = {
             chance: ShuffleArray([...CardDeck.chance]),
             communitybreast: ShuffleArray([...CardDeck.communitybreast]),
@@ -814,16 +1059,18 @@ export class GameMode {
             return;
         }
 
-        // TODO: Do logic to determine roll order
         for (let tile of Object.values(TilesObj)) {
             if (this.IsPurchasableTile(tile)) {
                 CustomNetTables.SetTableValue("property_ownership", tile.id, {
                     houseCount: 0,
-                    owner: (tile.id === "teal1" || tile.id === "teal2" || tile.id === "teal3") ? 0 : -1,
+                    owner: -1,
                 });
             }
         }
         CustomNetTables.SetTableValue("misc", "current_turn", {pID: 0, rolls: [], type: "transition"});
+
+        
+        // TODO: Do logic to determine roll order
         let rollOrder: Record<string, PlayerID> = {};
         for (let i = 0; i < DOTA_MAX_PLAYERS; i++) {
             if (PlayerResource.IsValidPlayer(i)) {
@@ -832,7 +1079,6 @@ export class GameMode {
                 if (!player) break;
                 rollOrder[i] = i;
 
-                player.GetTeam()
                 let colour = TeamColours[player.GetTeam()];
                 if (colour) {
                     PlayerResource.SetCustomPlayerColor(i, colour[0], colour[1], colour[2]);
@@ -970,10 +1216,16 @@ export class GameMode {
         // Anti Cheat, its just this simple
         if (!IsInToolsMode() && event.PlayerID !== current.pID) {return;}
 
-        //let dice1 = RandomInt(1, 6);
-        //let dice2 = RandomInt(1, 6);
-        let dice1 = 10;
-        let dice2 = 12;
+        let dice1 = RandomInt(1, 6);
+        let dice2 = RandomInt(1, 6);
+        //let dice1 = 10;
+        //let dice2 = 12;
+        if (current.turnState.type === "auxroll_prompt") {
+            // TODO: Make more generic
+            let value = 10 * (dice1 + dice2);
+            CustomNetTables.SetTableValue("misc", "current_turn", {type: "auxroll_result", pID: current.pID, rolls: current.turnState.rolls, card: current.turnState.card, dice1, dice2, value})
+            return;
+        }
         current.turnState.rolls = [...current.turnState.rolls, {dice1,dice2}];
 
         // We are in jail and did NOT get doubles :(
@@ -1092,6 +1344,8 @@ export class GameMode {
     public FoundHeroForGold() {
         let current = this.GetCurrentPlayerState();
         current.money += 200;
+        let hero = PlayerResource.GetPlayer(current.pID)?.GetAssignedHero();
+        hero?.HeroLevelUp(true);
         this.SavePlayer(current);
     }
     public FoundHero() {
@@ -1107,8 +1361,9 @@ export class GameMode {
             if (propertyState.owner > -1 && propertyState.owner !== current.pID && propertyState.houseCount >= 0) {
                 print("Well you need to pay up now");
                 const price = this.CalculateRent(tile, current, propertyState);
-                if (Number.isNaN(price)) {
-
+                DeepPrintTable({price, current, a:Number.isNaN(price)});
+                if (Number.isNaN(price) && current.turnState.type === "card_result") {
+                    CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "auxroll_prompt", rolls: current.turnState.rolls, card: current.turnState.card});
                 } else {
                     CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "payrent", rolls: current.turnState.rolls, property: tile.id, price});
                 }
@@ -1133,7 +1388,7 @@ export class GameMode {
     }
 
     public CalculateRent(tile: PropertyDefinition | UtilityDefinition | RailroadDefinition, current: PlayerState, propertyState: PropertyOwnership): number {
-        print(tile, current, propertyState);
+        DeepPrintTable({tile, current, propertyState});
         let turnState = CustomNetTables.GetTableValue("misc", "current_turn");
         if (propertyState.houseCount === -1) { 
             return 0;
@@ -1183,6 +1438,7 @@ export class GameMode {
             }
             return price;
         } else {
+            DeepPrintTable({turnState});
             if (turnState.type === "diceroll") {
                 let diceSum = turnState.dice1 + turnState.dice2;
                 let railroads = [
@@ -1192,7 +1448,7 @@ export class GameMode {
                 let ownedUtilities = railroads.filter(railroad => railroad.owner === propertyState.owner).length;
                 return tile.multipliers[ownedUtilities - 1] * diceSum;
             } else if (turnState.type === "card_result") {
-                return Number.NaN;
+                return NaN;
             } else {
                 throw "wtf why is it not diceroll state";
             }
@@ -1268,7 +1524,19 @@ export class GameMode {
     // Called on script_reload
     public Reload() {
         print("Script reloaded!");
-        this.StartGame();
+        for (let i = 0; i < DOTA_MAX_PLAYERS; i++) {
+            if (PlayerResource.IsValidPlayer(i)) {
+                let player = PlayerResource.GetPlayer(i);
+                let hero = player?.GetAssignedHero();
+                if (!hero) {
+                    print("Panic");
+                    return;
+                }
+                PlayerResource.ReplaceHeroWith(i, hero.GetClassname(), 0, 0);
+            }
+        }
+        CustomNetTables.SetTableValue("misc", "current_turn", {type: "transition", pID: -1, rolls: []});
+        Timers.CreateTimer(1, () => this.StartGame());
     }
 }
 

@@ -6,7 +6,11 @@ export class modifier_vision extends BaseModifier {
     CheckState() {
         return {
             [ModifierState.FORCED_FLYING_VISION]: true,
-            [ModifierState.PROVIDES_VISION]: true
+            [ModifierState.PROVIDES_VISION]: true,
+            [ModifierState.DISARMED]: true,
+            [ModifierState.MUTED]: true,
+            [ModifierState.SILENCED]: true,
+            [ModifierState.PASSIVES_DISABLED]: true
         };
     }
 
@@ -15,7 +19,7 @@ export class modifier_vision extends BaseModifier {
             ModifierFunction.BONUS_DAY_VISION,
             ModifierFunction.BONUS_NIGHT_VISION,
             ModifierFunction.MOVESPEED_BONUS_CONSTANT,
-            ModifierFunction.IGNORE_MOVESPEED_LIMIT
+            ModifierFunction.IGNORE_MOVESPEED_LIMIT,
         ];
     }
 

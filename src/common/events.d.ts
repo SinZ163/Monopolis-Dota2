@@ -13,20 +13,25 @@
 
 // To declare an event for use, add it to this table with the type of its data
 interface CustomGameEventDeclarations {
-    // Sent at start of game
-    monopolis_price_definitions: Record<Tiles, SpaceDefinition>, // S-->C
-    // Available in state start
+    // Available in state start, auxroll_prompt
     monopolis_requestdiceroll: MonopolisEmptyEvent, //C-->S
     // Available in state payrent
     monopolis_requestpayrent: MonopolisEmptyEvent, //C-->S
     // Available in state unowned
     monopolis_requestauction: MonopolisEmptyEvent, //C-->S
     monopolis_requestpurchase: MonopolisEmptyEvent, //C-->S
-    monopolis_requestrenovation: MonopolisRenovationEvent,  //C-->S
+    // Available in state card_prompt
     monopolis_requestcard: MonopolisEmptyEvent, //C-->S
+    // Available in state card_result
     monopolis_acknowledgecard: MonopolisEmptyEvent,
     // Available in state endturn
     monopolis_endturn: MonopolisEmptyEvent, //C-->S
+    monopolis_requestrenovation: MonopolisRenovationEvent,  //C-->S
+
+
+    // Available in state auction
+    monopolis_auctionbid: MonopolisAuctionBid, //C-->S
+    monopolis_auctionwithdraw: MonopolisEmptyEvent, //C-->s
 }
 
 interface CustomNetTableDeclarations {
@@ -38,7 +43,9 @@ interface CustomNetTableDeclarations {
         housing_market: {
             houses: number,
             hotels: number,
-        }
+        },
+        price_definition: Record<Tiles,SpaceDefinition>,
+        auction: AuctionState
     }
 }
 
@@ -69,4 +76,8 @@ interface MonopolisStartTurn {
 interface MonopolisRenovationEvent {
     property: PurchasableTiles;
     houseCount: number;
+}
+
+interface MonopolisAuctionBid {
+    amount: 10|50|100,
 }

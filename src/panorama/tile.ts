@@ -74,9 +74,12 @@ if (filename) {
     spaceName.text = $.Localize("#tile_" + tilename);
 }
 
-GameEvents.Subscribe("monopolis_price_definitions", event => {
+CustomNetTables.SubscribeNetTableListener("misc", (tableName, key, value) => {
+    if (key !== "price_definition") return;
+    let tilesObj = value as Record<Tiles, SpaceDefinition>;
+    
     let spacePrice = $("#SpacePrice") as LabelPanel;
-    let tile = event[tilename];
+    let tile = tilesObj[tilename];
     let price: number|undefined = undefined;
     if (tile.type === "tax") {
         let payText = $("#PaymentText") as LabelPanel;
