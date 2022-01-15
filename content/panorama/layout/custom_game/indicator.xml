@@ -16,5 +16,5 @@
 
     <ClientUIDialogPanel  hittest="false" class="TileIndicator">
         <Label id="IndicatorText" text="-1" />
-    </ClientUIDialogPanel>
+    </Panel>
 </root>

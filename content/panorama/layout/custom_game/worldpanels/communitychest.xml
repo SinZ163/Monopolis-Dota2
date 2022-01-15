@@ -9,11 +9,11 @@
         <!-- Snippets go here -->
     </snippets>
 
-    <ClientUIDialogPanel  hittest="false" class="CommunityChest">
+    <Panel hittest="false" hittestchildren="true" class="CommunityChest" require-composition-layer="true" always-cache-composition-layer="true">
         <Panel id="CommunityChest">
             <Label id="SpaceName" text="#tile_communitychest" />
 
-            <Image id="Image" src="file://{images}/spellicons/invoker_invoke.png"/>
+            <Image id="Image" src="s2r://panorama/images/spellicons/invoker_invoke_png.vtex"/>
         </Panel>
-    </ClientUIDialogPanel>
+    </Panel>
 </root>

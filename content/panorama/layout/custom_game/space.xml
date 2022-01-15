@@ -14,16 +14,16 @@
         <!-- Snippets go here -->
     </snippets>
 
-    <ClientUIDialogPanel class="MainSpace">
+    <Panel class="MainSpace" require-composition-layer="true" always-cache-composition-layer="true">
         <Panel id="ExampleSpace" onactivate="OnClick()">
             <Panel id="HouseBox" />
 
             <Label id="SpaceName" text="WHITECHAPEL ROAD" />
             
             <Panel id="PriceContainer">
-                <Panel id="GoldIcon" />
+                <Panel class="GoldIcon" />
                 <Label id="SpacePrice" text="420" />
             </Panel>
         </Panel>
-    </ClientUIDialogPanel>
+    </Panel>
 </root>

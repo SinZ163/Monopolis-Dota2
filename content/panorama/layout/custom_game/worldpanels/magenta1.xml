@@ -14,6 +14,6 @@
         <!-- Snippets go here -->
     </snippets>
 
-    <ClientUIDialogPanel  hittest="false" class="Tile">
-    </ClientUIDialogPanel>
+    <Panel hittest="false" hittestchildren="true" class="Tile" require-composition-layer="true" always-cache-composition-layer="true">
+    </Panel>
 </root>

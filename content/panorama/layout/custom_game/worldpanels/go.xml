@@ -9,14 +9,14 @@
         <!-- Snippets go here -->
     </snippets>
 
-    <ClientUIDialogPanel  hittest="false" class="MainHud">
+    <Panel hittest="false" hittestchildren="true" class="MainHud" require-composition-layer="true" always-cache-composition-layer="true">
         <Panel id="ExampleCorner">
 
             <Label id="CornerTextAbove" text="#go_above" />
 
-            <Image id="CornerImage" src="file://{images}/spellicons/alchemist_goblins_greed.png" />
+            <Image id="CornerImage" src="s2r://panorama/images/spellicons/alchemist_goblins_greed_png.vtex" />
 
             <Label id="CornerTextBelow" text="#go_below" />
         </Panel>
-    </ClientUIDialogPanel>
+    </Panel>
 </root>

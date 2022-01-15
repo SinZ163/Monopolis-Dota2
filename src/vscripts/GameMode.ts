@@ -1,4 +1,5 @@
 import { reloadable, toArray } from "./lib/tstl-utils";
+import LocalNetTables from "./LocalNetTables";
 import { modifier_gomoney } from "./modifiers/modifier_gomoney";
 import { modifier_movetotile } from "./modifiers/modifier_movetotile";
 import { modifier_vision } from "./modifiers/modifier_vision";
@@ -11,7 +12,7 @@ declare global {
     }
 }
 
-const CardDeck: Record<"chance"|"communitybreast", CardAction[]> = {
+const CardDeck: Record<Deck, CardAction[]> = {
     "chance": [
         {type: "teleport", dest: "go", text: "card_adv_go"},
         {type: "teleport", dest: "red3", text: "card_adv"},
@@ -39,7 +40,7 @@ const CardDeck: Record<"chance"|"communitybreast", CardAction[]> = {
         {type: "jail", text: "card_jail_text"},
         {type: "money_gain", value: 100, text: "COMMUNITYBREAST_HolidaySeason"},
         {type: "money_gain", value: 20, text: "COMMUNITYBREAST_Income"},
-        {type: "money_gain_others", value: 10, text: "COMMUNITYBREAST_Birthday"},
+        //{type: "money_gain_others", value: 10, text: "COMMUNITYBREAST_Birthday"},
         {type: "money_gain", value: 100, text: "COMMUNITYBREAST_LifeInsurance"},
         {type: "money_lose", value: 50, text: "COMMUNITYBREAST_Hospital"},
         {type: "money_lose", value: 50, text: "COMMUNITYBREAST_School"},
@@ -545,6 +546,12 @@ export class GameMode {
         communitybreast: [...CardDeck.communitybreast],
     }
 
+    private propertyOwnership: LocalNetTables<"property_ownership">;
+    private playerState: LocalNetTables<"player_state">;
+    private miscState: LocalNetTables<"misc">;
+    private spawnedPlayers: PlayerID[] = [];
+    private entityListener;
+
     constructor() {
         this.configure();
         ListenToGameEvent(
@@ -552,6 +559,14 @@ export class GameMode {
             () => this.OnStateChange(),
             undefined
         );
+        this.entityListener = ListenToGameEvent(
+            "npc_spawned",
+            (event) => this.OnEntitySpawned(event),
+            undefined
+        )
+        this.propertyOwnership = new LocalNetTables("property_ownership");
+        this.playerState = new LocalNetTables("player_state");
+        this.miscState = new LocalNetTables("misc");
         CustomGameEventManager.RegisterListener("monopolis_endturn", (user, event) => this.EndTurn(user, event));
         CustomGameEventManager.RegisterListener("monopolis_requestdiceroll", (user, event) => this.RollDice(user, event));
         CustomGameEventManager.RegisterListener("monopolis_requestpurchase", (user, event) => this.PurchaseProperty(user, event));
@@ -562,6 +577,144 @@ export class GameMode {
         CustomGameEventManager.RegisterListener("monopolis_acknowledgecard", (user, event) => this.AcknowledgeCard(user, event));
         CustomGameEventManager.RegisterListener("monopolis_auctionbid", (user, event) => this.AuctionBid(user, event));
         CustomGameEventManager.RegisterListener("monopolis_auctionwithdraw", (user, event) => this.AuctionWithdraw(user, event));
+        CustomGameEventManager.RegisterListener("monopolis_requestbankrupt", (user, event) => this.Bankrupt(user, event));
+        CustomGameEventManager.RegisterListener("monopolis_requesttrade", (user, event) => this.StartTrade(user, event));
+        CustomGameEventManager.RegisterListener("monopolis_trade", (user, event) => this.TradeEvent(user, event));
+    }
+    TradeEvent(user: EntityIndex, event: MonopolisTradeEvent & {PlayerID: PlayerID}): void {
+        DeepPrintTable(event);
+        let uiState = CustomNetTables.GetTableValue("misc", "ui_state");
+        DeepPrintTable(uiState);
+        // TODO: restricted trade scenarios
+        if (uiState.type !== "trade") return;
+        let tradeState = this.miscState.GetValue("trade");
+        if (!IsInToolsMode() && event.PlayerID !== tradeState.current) {return;}
+        let participantSet = new Set(tradeState.participants);
+        if (tradeState.status === TradeStateStatus.ModifyTrade) {
+            if (event.type === "add_property") {
+                let propertyState = this.propertyOwnership.GetValue(event.property);
+                // Only allow it going from the intended owner
+                if (event.from !== propertyState.owner) return;
+                if (event.from === event.to) return;
+                if (propertyState.houseCount > 0) {
+                    HudErrorMessage("#monopolis_trade_improvement");
+                    return;
+                }
+                // don't duplicate
+                if (tradeState.offers.find(offer => offer.type === "property" && offer.property === event.property)) {
+                    HudErrorMessage("#monopolis_trade_inoffer");
+                    return;
+                }
+                tradeState.offers.push({type: "property", from: event.from, to: event.to, property: event.property});
+                participantSet.add(event.from);
+                participantSet.add(event.to);
+            } else if (event.type === "remove_property") {
+                tradeState.offers = tradeState.offers.filter(offer => offer.type !== "property" || offer.property !== event.property);
+                participantSet = new Set(tradeState.offers.flatMap(offer => [offer.from, offer.to]));
+            } else if (event.type === "add_money") {
+                let fromPlayer = this.playerState.GetValue(tostring(event.from));
+                if (event.from === event.to) return;
+                if (fromPlayer.money + (tradeState.deltaMoney[event.from] ?? 0) < event.money) {
+                    HudErrorMessage("#monopolis_trade_broke");
+                    return;
+                };
+                tradeState.offers.push({type: "money", from: event.from, to: event.to, money: event.money});
+                participantSet.add(event.from);
+                participantSet.add(event.to);
+                tradeState.deltaMoney[event.from] = (tradeState.deltaMoney[event.from] ?? 0) - event.money;
+                tradeState.deltaMoney[event.to] = (tradeState.deltaMoney[event.to] ?? 0) + event.money;
+            } else if (event.type === "remove_money") {
+                let moneyOfferId = tradeState.offers.findIndex(offer => offer.type === "money" && offer.from === event.from && offer.to === event.to && offer.money === event.money);
+                if (moneyOfferId > -1) {
+                    tradeState.offers.splice(moneyOfferId, 1);
+                    participantSet = new Set(tradeState.offers.flatMap(offer => [offer.from, offer.to]));
+                }
+            } else if (event.type === "confirm") {
+                if (participantSet.size === 0) {
+                    HudErrorMessage("#monopolis_trade_noparticipant");
+                    return;
+                }
+                tradeState.status = TradeStateStatus.Confirmation;
+                tradeState.confirmations = {}
+            } else if (event.type === "cancel") {
+                CustomNetTables.SetTableValue("misc", "ui_state", {type: "n/a"});
+            }
+        } else if (tradeState.status === TradeStateStatus.Confirmation) {
+            if (event.type === "accept") {
+                tradeState.confirmations[event.PlayerID] = true;
+            }
+            else if (event.type === "reject") {
+                tradeState.confirmations[event.PlayerID] = false;
+                Timers.CreateTimer(3, () => {
+                    CustomNetTables.SetTableValue("misc", "ui_state", {type: "n/a"});
+                });
+            // Tools only hack to force all to be "true"
+            } else if (IsInToolsMode() && event.type === "confirm") {
+                for (let participant of participantSet) {
+                    tradeState.confirmations[participant] = true;
+                }
+            }
+            let isSuccess = true;
+            for (let participant of participantSet) {
+                if (!tradeState.confirmations[participant]) {
+                    isSuccess = false;
+                    break;
+                }
+            }
+            if (isSuccess) {
+                Timers.CreateTimer(3, () => {
+                    CustomNetTables.SetTableValue("misc", "ui_state", {type: "n/a"});
+                    for (let offer of tradeState.offers) {
+                        if (offer.type === "property") {
+                            let propertyState = this.propertyOwnership.GetValue(offer.property);
+                            propertyState.owner = offer.to;
+                            this.propertyOwnership.SetValue(offer.property, propertyState);
+                        } else if (offer.type === "money") {
+                            let playerFromState = this.playerState.GetValue(tostring(offer.from));
+                            let playerToState = this.playerState.GetValue(tostring(offer.to));
+                            playerFromState.money -= offer.money;
+                            playerToState.money += offer.money;
+                            this.playerState.SetValue(tostring(offer.from), playerFromState);
+                            this.playerState.SetValue(tostring(offer.to), playerToState);
+                        }
+                    }
+                });
+            }
+        }
+        
+        tradeState.participants = [...participantSet];
+        this.miscState.SetValue("trade", tradeState);
+        DeepPrintTable(tradeState);
+    }
+    StartTrade(user: EntityIndex, event: { PlayerID: PlayerID; }): void {
+        let current = this.GetCurrentPlayerState();
+        if (!IsInToolsMode() && event.PlayerID !== current.pID) {return;}
+        // TODO: Handle the restricted trade scenarios
+        if (current.turnState.type !== "endturn") return;
+
+        let uiState = CustomNetTables.GetTableValue("misc", "ui_state");
+        if (uiState.type === "n/a") {
+            CustomNetTables.SetTableValue("misc", "ui_state", {type: "trade"});
+            this.miscState.SetValue("trade", {initiator: current.pID, current: current.pID, participants: [], offers: [], status: TradeStateStatus.ModifyTrade, confirmations: {}, deltaMoney: {}});
+        }
+    }
+    OnEntitySpawned(event: GameEventProvidedProperties & NpcSpawnedEvent): void {
+        let spawnedUnit = EntIndexToHScript(event.entindex);
+        if (!spawnedUnit) return;
+        if (!spawnedUnit.IsBaseNPC() || !spawnedUnit.IsRealHero()) return;
+        let pID = spawnedUnit.GetPlayerID();
+        this.spawnedPlayers.push(pID);
+        let playerCount = 0;
+        for (let i = 0; i < DOTA_MAX_PLAYERS; i++) {
+            if (PlayerResource.IsValidPlayer(i)) {
+                playerCount++;
+            }
+        }
+        if (this.spawnedPlayers.length >= playerCount) {
+            print(this.spawnedPlayers.length, playerCount);
+            Timers.CreateTimer(() => this.StartGame());
+            StopListeningToGameEvent(this.entityListener);
+        }
     }
     GetAuctionState(): AuctionState {
         let auctionState = CustomNetTables.GetTableValue("misc", "auction");
@@ -614,15 +767,14 @@ export class GameMode {
         }
         if (allWithdrawn) {
             print("All withdrawn");
-            // TODO: End auction 
             if (auctionState.current_owner === -1) {
-                FireGameEvent("dota_hud_error_message", { reason: 80, message: "#monopolis_auction_failed"});
+                HudErrorMessage("#monopolis_auction_failed");
             } else {
-                let bidder = CustomNetTables.GetTableValue("player_state", tostring(auctionState.current_owner));
+                let bidder = this.playerState.GetValue(tostring(auctionState.current_owner));
                 bidder.money -= auctionState.current_bid;
-                let property = CustomNetTables.GetTableValue("property_ownership", current.turnState.property);
+                let property = this.propertyOwnership.GetValue(current.turnState.property);
                 property.owner = auctionState.current_owner;
-                CustomNetTables.SetTableValue("property_ownership", current.turnState.property, property);
+                this.propertyOwnership.SetValue(current.turnState.property, property);
                 this.SavePlayer(bidder);
             }
             CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID, rolls: current.turnState.rolls});
@@ -636,7 +788,7 @@ export class GameMode {
         let auctionState = this.GetAuctionState();
         if (!IsInToolsMode() && auctionState.current_bidder !== event.PlayerID) return;
         if ((event.amount + auctionState.current_bid) > current.money) {
-            FireGameEvent("dota_hud_error_message", { reason: 80, message: "#monopolis_auction_broke" });
+            HudErrorMessage("#monopolis_auction_broke");
             return;
         }
         auctionState.historical_bids.push({
@@ -651,12 +803,14 @@ export class GameMode {
         let current = this.GetCurrentPlayerState();
         if (!IsInToolsMode() && event.PlayerID !== current.pID) {return;}
         if (current.turnState.type === "auxroll_result") {
-            // TODO: Handle bankrupt scenario
+            if (current.money < current.turnState.value) {
+                HudErrorMessage("#monopolis_broke");
+                return;
+            }
             current.money -= current.turnState.value;
             let tile = TilesReverseLookup[current.location];
-            tile
-            let propertyOwnership = CustomNetTables.GetTableValue("property_ownership", TilesReverseLookup[current.location] as PurchasableTiles);
-            let owner = CustomNetTables.GetTableValue("player_state", tostring(propertyOwnership.owner));
+            let propertyOwnership = this.propertyOwnership.GetValue(TilesReverseLookup[current.location] as PurchasableTiles);
+            let owner = this.playerState.GetValue(tostring(propertyOwnership.owner));
             owner.money += current.turnState.value;
             CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID, rolls: current.turnState.rolls});
             this.SavePlayer(current);
@@ -678,9 +832,9 @@ export class GameMode {
                 for (let i = 0; i < DOTA_MAX_PLAYERS; i++) {
                     if (i === current.pID) continue;
                     if (PlayerResource.IsValidPlayer(i)) {
-                        let playerState = CustomNetTables.GetTableValue("player_state", tostring(i));
+                        let playerState = this.playerState.GetValue(tostring(i));
+                        if (playerState.alive === 0) { continue }
                         // TODO: Handle bankrupt scenario
-                        // TODO handle players already dead
                         playerState.money -= card.value;
                         this.SavePlayer(playerState);
                         playerCountGain++;
@@ -690,23 +844,34 @@ export class GameMode {
                 this.SavePlayer(current);
                 break;
             case "money_lose":
+                if (current.money < card.value) {
+                    HudErrorMessage("#monopolis_broke");
+                    return;
+                }
                 current.money -= card.value;
                 this.SavePlayer(current);
                 break;
             case "money_lose_others":
-                let playerCountLose = 0;
+                let otherPlayers = [];
                 for (let i = 0; i < DOTA_MAX_PLAYERS; i++) {
                     if (i === current.pID) continue;
                     if (PlayerResource.IsValidPlayer(i)) {
-                        let playerState = CustomNetTables.GetTableValue("player_state", tostring(i));
-                        // TODO handle players already dead
-                        playerState.money += card.value;
-                        this.SavePlayer(playerState);
-                        playerCountLose++;
+                        let playerState = this.playerState.GetValue(tostring(i));
+                        if (playerState.alive === 1) {
+                            otherPlayers.push(playerState);
+                        }
                     }
                 }
-                // TODO: Handle bankrupt scenario
-                current.money -= (card.value * playerCountLose);
+                let cost = (card.value * otherPlayers.length);
+                if (current.money < cost) {
+                    HudErrorMessage("#monopolis_broke");
+                    return;
+                }
+                current.money -= cost;
+                for (let playerState of otherPlayers) {
+                    playerState.money += card.value;
+                    this.SavePlayer(playerState);
+                }
                 this.SavePlayer(current);
                 break;
             case "repairs":
@@ -750,17 +915,64 @@ export class GameMode {
         } else {
             // TODO: Work out how we are going to keep it
         }
-        CustomNetTables.SetTableValue("misc", "current_turn", {type: "card_result", pID: current.pID, rolls: current.turnState.rolls, card});
+        CustomNetTables.SetTableValue("misc", "current_turn", {type: "card_result", pID: current.pID, rolls: current.turnState.rolls, card, potentialBankrupt: -1});
     }
     ApplyRenovation(user: EntityIndex, event: { property: PurchasableTiles; houseCount: number; PlayerID: PlayerID; }): void {
         let current = this.GetCurrentPlayerState();
         if (!IsInToolsMode() && event.PlayerID !== current.pID) {return;}
 
         let tile = TilesObj[event.property] as (RailroadDefinition | UtilityDefinition | PropertyDefinition);
-        let propertyState = CustomNetTables.GetTableValue("property_ownership", tile.id);
+        let propertyState = this.propertyOwnership.GetValue(tile.id);
 
         // Asserts its ownable and if it is, its the current player
         if (propertyState?.owner !== current.pID) { return; }
+
+        // only specific turn states are allowed here
+        const validTurnStates = ["payrent", "endturn", "card_result", "auxroll_result"];
+        if (!validTurnStates.includes(current.turnState.type)) return;
+        if (current.turnState.type === "payrent") {
+            // if you can afford it, you don't have access to property management
+            if (current.money > current.turnState.price) return;
+            // if you owe someone money and have access to property management, only sell, no buy
+            if (event.houseCount > propertyState.houseCount) {
+                HudErrorMessage("#monopolis_property_debt");
+                return;
+            }
+        }
+        if (current.turnState.type === "card_result") {
+            if (current.turnState.card.type === "money_lose" || current.turnState.card.type === "money_lose_others") {
+                // if you can afford it, you don't have access to property management
+                let value = current.turnState.card.value;
+                if (current.turnState.card.type === "money_lose_others") {
+                    let otherPlayers = [];
+                    for (let i = 0; i < DOTA_MAX_PLAYERS; i++) {
+                        if (i === current.pID) continue;
+                        if (PlayerResource.IsValidPlayer(i)) {
+                            let playerState = this.playerState.GetValue(tostring(i));
+                            if (playerState.alive === 1) {
+                                otherPlayers.push(playerState);
+                            }
+                        }
+                    }
+                    value = otherPlayers.length * value;
+                }
+                if (current.money > value) return;
+                // if you owe someone money and have access to property management, only sell, no buy
+                if (event.houseCount > propertyState.houseCount) {
+                    HudErrorMessage("#monopolis_property_debt");
+                    return;
+                }
+            } else { return; }
+        }
+        if (current.turnState.type === "auxroll_result") {
+            // if you can afford it, you don't have access to property management
+            if (current.money > current.turnState.value) return;
+            // if you owe someone money and have access to property management, only sell, no buy
+            if (event.houseCount > propertyState.houseCount) {
+                HudErrorMessage("#monopolis_property_debt");
+                return;
+            }
+        }
 
         let commonLogicUsed = false;
         if (propertyState.houseCount === 0 && event.houseCount === -1) {
@@ -772,7 +984,7 @@ export class GameMode {
             // -1 => 0, we are unmortgaging and should take the money + 10% fee
             let cost = (tile.purchasePrice / 2) * 1.10;
             if (current.money < cost) {
-                FireGameEvent("dota_hud_error_message", { reason: 80, message: "#monopolis_property_broke" });
+                HudErrorMessage("#monopolis_property_broke");
                 return;
             }
             current.money -= cost;
@@ -782,7 +994,7 @@ export class GameMode {
 
         if (tile.type === "property") {
             let properties = Object.values(TilesObj).filter(row => row.type === "property" && row.category === (tile as PropertyDefinition).category) as PropertyDefinition[];
-            let owners = properties.map(row => [row, CustomNetTables.GetTableValue("property_ownership", row.id)]) as [PropertyDefinition, PropertyOwnership][];
+            let owners = properties.map(row => [row, this.propertyOwnership.GetValue(row.id)]) as [PropertyDefinition, PropertyOwnership][];
             let isMonopoly = true;
             let minHouseCount = math.huge;
             let maxHouseCount = -1 * math.huge;
@@ -817,12 +1029,12 @@ export class GameMode {
                 return;
             }
             if (currentDelta > 0 && (event.houseCount > maxHouseCount || event.houseCount < minHouseCount)) {
-                FireGameEvent("dota_hud_error_message", { reason: 80, message: "#monopolis_property_buildevenly" });
+                HudErrorMessage("#monopolis_property_buildevenly");
                 return;
             }
             // If you don't have the monopoly fuck off
             if (event.houseCount > 0 && !isMonopoly) {
-                FireGameEvent("dota_hud_error_message", { reason: 80, message: "#monopolis_property_needmonopoly" });
+                HudErrorMessage("#monopolis_property_needmonopoly");
                 return;
             }
             let market = CustomNetTables.GetTableValue("misc", "housing_market");
@@ -833,28 +1045,32 @@ export class GameMode {
                 propertyState.houseCount = -1;
             } else if (propertyState.houseCount === -1 && event.houseCount === 0) {
                 // -1 => 0, we are unmortgaging and should take the money + 10% fee
-                // TODO: Error if the user is poor
-                current.money -= (tile.purchasePrice / 2) * 1.10;
+                let cost = (tile.purchasePrice / 2) * 1.10;
+                if (current.money < cost) {
+                    HudErrorMessage("#monopolis_property_broke");
+                    return;
+                }
+                current.money -= cost;
                 propertyState.houseCount = 0;
             }
             // If you want houses and aren't going to a hotel, needs to have houses in the market
             else if (event.houseCount != 5 && delta > 0 && market.houses < delta) {
-                FireGameEvent("dota_hud_error_message", { reason: 80, message: "#monopolis_property_marketcrash" });
+                HudErrorMessage("#monopolis_property_marketcrash");
                 return;
             }
             // If you want a hotel, need a hotel in the market
             if (event.houseCount === 5 && delta > 0 && market.hotels < 1) {
-                FireGameEvent("dota_hud_error_message", { reason: 80, message: "#monopolis_property_marketcrash" });
+                HudErrorMessage("#monopolis_property_marketcrash");
                 return;
             }
             // If you are only removing the hotel and replacing with 4 houses, 4 houses need to be in the market
             if (delta === -1 && propertyState.houseCount === 5 && market.houses < 4) {
-                FireGameEvent("dota_hud_error_message", { reason: 80, message: "#monopolis_property_marketcrash" });
+                HudErrorMessage("#monopolis_property_marketcrash");
                 return;
             }
             // if you want a house/hotel and are poor, go away
             if (delta > 0 && current.money < tile.housePrice) {
-                FireGameEvent("dota_hud_error_message", { reason: 80, message: "#monopolis_property_broke" });
+                HudErrorMessage("#monopolis_property_broke");
                 return;
             }
             // Sell the hotel and not put houses back on
@@ -896,7 +1112,7 @@ export class GameMode {
             CustomNetTables.SetTableValue("misc", "housing_market", market);
         }
         
-        CustomNetTables.SetTableValue("property_ownership", tile.id, propertyState);
+        this.propertyOwnership.SetValue(tile.id, propertyState);
         this.SavePlayer(current);
         print("Saving the market, current property and player?");
     }
@@ -921,6 +1137,88 @@ export class GameMode {
         });
         return;
     }
+    
+    Bankrupt(user: EntityIndex, event: { PlayerID: PlayerID; }): void {
+        let current = this.GetCurrentPlayerState();
+        if (!IsInToolsMode() && event.PlayerID !== current.pID) {return;}
+        if (current.turnState.type !== "payrent" && current.turnState.type !== "card_result" && current.turnState.type !== "auxroll_result") {return;}
+        if (current.turnState.type === "payrent") {
+            if (current.money > current.turnState.price) return;
+        }
+        else if (current.turnState.type === "card_result") {
+            if (current.turnState.card.type !== "money_lose" && current.turnState.card.type !== "money_lose_others") return;
+            let value = current.turnState.card.value;
+            if (current.turnState.card.type === "money_lose_others") {
+                let otherPlayers = [];
+                for (let i = 0; i < DOTA_MAX_PLAYERS; i++) {
+                    if (i === current.pID) continue;
+                    if (PlayerResource.IsValidPlayer(i)) {
+                        let playerState = this.playerState.GetValue(tostring(i));
+                        if (playerState.alive === 1) {
+                            otherPlayers.push(playerState);
+                        }
+                    }
+                }
+                value = value * otherPlayers.length;
+            }
+            if (current.money > value) return;
+        } else {
+            if (current.money > current.turnState.value) return;
+        }
+        // if you made it this far, you are genuinely broke, good job
+        
+        let uiState = CustomNetTables.GetTableValue("misc", "ui_state");
+        if (uiState.type === "n/a") {
+            CustomNetTables.SetTableValue("misc", "ui_state", {type: "bankrupt_confirm"});
+            return;
+        }
+        if (uiState.type !== "bankrupt_confirm") return;
+        // TODO: Fuck we actually need to bankrupt them now
+        let propertyStates = this.propertyOwnership.GetAllValues();
+        let modifiedProperties: Array<[string, PropertyOwnership]> = [];
+        for (let [id, state] of Object.entries(propertyStates)) {
+            if (state.owner === current.pID) {
+                let propertyInfo = TilesObj[id as PurchasableTiles] as PropertyDefinition|RailroadDefinition|UtilityDefinition;
+                if (propertyInfo.type === "property" && state.houseCount > 0) {
+                    current.money += (propertyInfo.housePrice * state.houseCount)/2;
+                }
+                if (state.houseCount >= 0) {
+                    current.money += propertyInfo.purchasePrice / 2;
+                }
+                // TODO: #pretty destruction of the board
+                modifiedProperties.push([id, {
+                    owner: current.turnState.potentialBankrupt,
+                    houseCount: -1
+                }]);
+            }
+        }
+        // when it isn't the bank
+        // TODO: free parking house rule
+        // TODO: Auction all the shit
+        let player = PlayerResource.GetPlayer(current.pID);
+        let hero = player?.GetAssignedHero();
+        hero?.SetRespawnsDisabled(true);
+
+        if (current.turnState.potentialBankrupt !== -1) {
+            let asshole = this.playerState.GetValue(tostring(current.turnState.potentialBankrupt));
+            asshole.money += current.money;
+            this.playerState.SetValue(tostring(asshole.pID), asshole);
+            let assholePlayer = PlayerResource.GetPlayer(asshole.pID);
+            let assholeHero = assholePlayer?.GetAssignedHero();
+            hero?.Kill(undefined, assholeHero);
+        } else {
+            hero?.Kill(undefined, undefined);
+        }
+        for (let [id, state] of modifiedProperties) {
+            this.propertyOwnership.SetValue(id as PurchasableTiles, state);
+        }
+        current.money = 0;
+        current.alive = 0;
+        this.playerState.SetValue(tostring(current.pID), current);
+        CustomNetTables.SetTableValue("misc", "ui_state", {type: "n/a"});
+        Timers.CreateTimer(() => hero?.SetUnitCanRespawn(false));
+        this.NextTurn();
+    }
     PayRent(user: EntityIndex, event: { PlayerID: PlayerID; }): void {
         let current = this.GetCurrentPlayerState();
         print("Roll Dice", current.pID);
@@ -932,7 +1230,10 @@ export class GameMode {
         let turnState = CustomNetTables.GetTableValue("misc", "current_turn");
         
         if (turnState.type === "jailed") {
-            // TODO tell client they cant go negative
+            if (current.money < 50) {
+                HudErrorMessage("#monopolis_broke");
+                return;
+            }
             current.money -= 50;
             this.SavePlayer(current);
             this.LeaveJail();
@@ -951,15 +1252,19 @@ export class GameMode {
         // this event is only available in payrent state
         if (turnState.type !== "payrent") return;
 
+        if (current.money < turnState.price) {
+            HudErrorMessage("#monopolis_broke");
+            return;
+        }
+
         let tile = TilesObj[turnState.property];
         // need this check because it may be tax which has no owner
         if (this.IsPurchasableTile(tile)) {
-            let propertyState = CustomNetTables.GetTableValue("property_ownership", tile.id);
-            let owner = CustomNetTables.GetTableValue("player_state", tostring(propertyState.owner));
+            let propertyState = this.propertyOwnership.GetValue(tile.id);
+            let owner = this.playerState.GetValue(tostring(propertyState.owner));
             owner.money += turnState.price;
             this.SavePlayer(owner);
         }
-        // TODO tell client they cant go negative
         current.money -= turnState.price;
         this.SavePlayer(current);
         CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, rolls: current.turnState.rolls, type: "endturn"});
@@ -977,12 +1282,17 @@ export class GameMode {
         if (turnState.type !== "unowned") return;
 
         let tile = TilesObj[turnState.property];
-        let propertyState = CustomNetTables.GetTableValue("property_ownership", turnState.property);
+        let propertyState = this.propertyOwnership.GetValue(turnState.property);
         if (!this.IsPurchasableTile(tile)) return;
+
+        if (current.money < tile.purchasePrice) {
+            HudErrorMessage("#monopolis_broke");
+            return;
+        }
         current.money -= tile.purchasePrice;
         propertyState.owner = current.pID;
         this.SavePlayer(current);
-        CustomNetTables.SetTableValue("property_ownership", tile.id, propertyState);
+        this.propertyOwnership.SetValue(tile.id, propertyState);
         CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, rolls: current.turnState.rolls, type: "endturn"});
     }
 
@@ -996,6 +1306,9 @@ export class GameMode {
         GameRules.SetCustomGameTeamMaxPlayers(DotaTeam.CUSTOM_5, 1);
         GameRules.SetCustomGameTeamMaxPlayers(DotaTeam.CUSTOM_6, 1);
 
+        GameRules.GetGameModeEntity().SetAnnouncerDisabled(false);
+        GameRules.GetGameModeEntity().SetKillingSpreeAnnouncerDisabled(false);
+
         for (let [k,v] of Object.entries(TeamColours)) {
             SetTeamCustomHealthbarColor(tonumber(k) as DotaTeam, v[0], v[1], v[2]);
         }
@@ -1004,8 +1317,10 @@ export class GameMode {
 
         GameRules.SetShowcaseTime(0);
         GameRules.SetStrategyTime(0);
+        GameRules.SetPreGameTime(0);
         
         GameRules.SetHeroSelectionTime(heroSelectionTime);
+
     }
 
     public OnStateChange(): void {
@@ -1025,13 +1340,6 @@ export class GameMode {
                 });
             }
         }
-
-        // Start game once pregame hits
-        if (state === GameState.PRE_GAME) {
-            Timers.CreateTimer(5, () => this.StartGame());
-
-            print("We are in pregame now!");
-        }
     }
 
     public IsPurchasableTile(tile: SpaceDefinition): tile is PropertyDefinition | RailroadDefinition | UtilityDefinition {
@@ -1048,6 +1356,7 @@ export class GameMode {
         print("Game starting!");
         CustomNetTables.SetTableValue("misc", "price_definition", TilesObj);
         CustomNetTables.SetTableValue("misc", "housing_market", {houses: 32, hotels: 12});
+        CustomNetTables.SetTableValue("misc", "ui_state", {type: "n/a"});
         this.currentDecks = {
             chance: ShuffleArray([...CardDeck.chance]),
             communitybreast: ShuffleArray([...CardDeck.communitybreast]),
@@ -1061,14 +1370,13 @@ export class GameMode {
 
         for (let tile of Object.values(TilesObj)) {
             if (this.IsPurchasableTile(tile)) {
-                CustomNetTables.SetTableValue("property_ownership", tile.id, {
+                this.propertyOwnership.SetValue(tile.id, {
                     houseCount: 0,
                     owner: -1,
                 });
             }
         }
         CustomNetTables.SetTableValue("misc", "current_turn", {pID: 0, rolls: [], type: "transition"});
-
         
         // TODO: Do logic to determine roll order
         let rollOrder: Record<string, PlayerID> = {};
@@ -1100,11 +1408,12 @@ export class GameMode {
                     print(player, hero);
                 }
 
-                CustomNetTables.SetTableValue("player_state", tostring(i), {
+                this.playerState.SetValue(tostring(i), {
                     pID: i,
                     money: 1500,
                     location: 0,
-                    jailed: 0
+                    jailed: 0,
+                    alive: 1,
                 });
             }
         }
@@ -1114,7 +1423,7 @@ export class GameMode {
 
     public GetCurrentPlayerState() {
         const turnState = CustomNetTables.GetTableValue("misc", "current_turn");
-        const playerState = CustomNetTables.GetTableValue("player_state", tostring(turnState.pID));
+        const playerState = this.playerState.GetValue(tostring(turnState.pID));
         let out = {...playerState, turnState: {...turnState, rolls: toArray(turnState.rolls)}};
         if (out.turnState.type === "jailed") {
             (out.turnState as any).preRolled = out.turnState.preRolled === 1
@@ -1142,7 +1451,7 @@ export class GameMode {
     public SavePlayer(player: PlayerState & {turnState?: TurnState}) {
         let newPlayer = {...player};
         delete newPlayer.turnState;
-        CustomNetTables.SetTableValue("player_state", tostring(player.pID), player);
+        this.playerState.SetValue(tostring(player.pID), player);
     }
 
     public GotoJail() {
@@ -1218,12 +1527,13 @@ export class GameMode {
 
         let dice1 = RandomInt(1, 6);
         let dice2 = RandomInt(1, 6);
-        //let dice1 = 10;
-        //let dice2 = 12;
+        //let dice1 = 4;
+        //let dice2 = 3;
         if (current.turnState.type === "auxroll_prompt") {
+            let propertyState = this.propertyOwnership.GetValue(TilesReverseLookup[current.location] as PurchasableTiles);
             // TODO: Make more generic
             let value = 10 * (dice1 + dice2);
-            CustomNetTables.SetTableValue("misc", "current_turn", {type: "auxroll_result", pID: current.pID, rolls: current.turnState.rolls, card: current.turnState.card, dice1, dice2, value})
+            CustomNetTables.SetTableValue("misc", "current_turn", {type: "auxroll_result", pID: current.pID, rolls: current.turnState.rolls, card: current.turnState.card, dice1, dice2, value, potentialBankrupt: propertyState.owner})
             return;
         }
         current.turnState.rolls = [...current.turnState.rolls, {dice1,dice2}];
@@ -1305,7 +1615,12 @@ export class GameMode {
 
             let rowAmount: number;
             if (currentSide === futureSide) {
-                rowAmount = futureDelta - currentDelta;
+                // edge case where a teleport card makes you to something behind you on same side, do the lap around
+                if (futureDelta < currentDelta && !backwards) {
+                    rowAmount = 10 - currentDelta;
+                } else {
+                    rowAmount = futureDelta - currentDelta;
+                }
             } else if (backwards) {
                     rowAmount = -currentDelta;
             } else {
@@ -1356,7 +1671,9 @@ export class GameMode {
         DeepPrintTable(current);
         print(property);
         if (this.IsPurchasableTile(tile)) {
-            let propertyState = CustomNetTables.GetTableValue("property_ownership", tile.id);
+            let propertyState = this.propertyOwnership.GetValue(tile.id);
+            DeepPrintTable(this.propertyOwnership);
+            DeepPrintTable(propertyState);
             // Owned property that isn't current player and it isn't mortgaged (-1)
             if (propertyState.owner > -1 && propertyState.owner !== current.pID && propertyState.houseCount >= 0) {
                 print("Well you need to pay up now");
@@ -1365,7 +1682,7 @@ export class GameMode {
                 if (Number.isNaN(price) && current.turnState.type === "card_result") {
                     CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "auxroll_prompt", rolls: current.turnState.rolls, card: current.turnState.card});
                 } else {
-                    CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "payrent", rolls: current.turnState.rolls, property: tile.id, price});
+                    CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "payrent", rolls: current.turnState.rolls, property: tile.id, price, potentialBankrupt: propertyState.owner});
                 }
             }
             else if (propertyState.owner === -1) {
@@ -1375,14 +1692,13 @@ export class GameMode {
                 CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID, rolls: current.turnState.rolls});
             }
         } else if (tile.type === "tax") {
-            CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "payrent", rolls: current.turnState.rolls, property: tile.id, price: tile.cost});
+            CustomNetTables.SetTableValue("misc", "current_turn", {pID: current.pID, type: "payrent", rolls: current.turnState.rolls, property: tile.id, price: tile.cost, potentialBankrupt: -1});
         } else if (tile.type === "card") {
             CustomNetTables.SetTableValue("misc", "current_turn", {type: "card_prompt", pID: current.pID, rolls: current.turnState.rolls, deck: tile.deck});
         } else if (tile.id === "gotojail") {
             this.GotoJail();
         } else {
-            // TODO: implement chance/communitybreast/etc
-            CustomNetTables.SetTableValue("player_state", tostring(current.pID), current);
+            this.playerState.SetValue(tostring(current.pID), current);
             CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID, rolls: current.turnState.rolls});
         }
     }
@@ -1395,7 +1711,7 @@ export class GameMode {
         }
         if (tile.type === "property") {
             let properties = Object.values(TilesObj).filter(row => row.type === "property" && row.category === tile.category) as PropertyDefinition[];
-            let owners = properties.map(row => [row, CustomNetTables.GetTableValue("property_ownership", row.id)]) as [PropertyDefinition, PropertyOwnership][];
+            let owners = properties.map(row => [row, this.propertyOwnership.GetValue(row.id)]) as [PropertyDefinition, PropertyOwnership][];
             DeepPrintTable(owners);
             let isMonopoly = true;
             for (let owner of owners) {
@@ -1426,10 +1742,10 @@ export class GameMode {
         }
         else if (tile.type === "railroad") {
             let railroads = [
-                CustomNetTables.GetTableValue("property_ownership", "railroad1"),
-                CustomNetTables.GetTableValue("property_ownership", "railroad2"),
-                CustomNetTables.GetTableValue("property_ownership", "railroad3"),
-                CustomNetTables.GetTableValue("property_ownership", "railroad4")
+                this.propertyOwnership.GetValue("railroad1"),
+                this.propertyOwnership.GetValue("railroad2"),
+                this.propertyOwnership.GetValue("railroad3"),
+                this.propertyOwnership.GetValue("railroad4")
             ];
             let ownedRailroads = railroads.filter(railroad => railroad.owner === propertyState.owner).length;
             let price = tile.prices[ownedRailroads - 1];
@@ -1442,8 +1758,8 @@ export class GameMode {
             if (turnState.type === "diceroll") {
                 let diceSum = turnState.dice1 + turnState.dice2;
                 let railroads = [
-                    CustomNetTables.GetTableValue("property_ownership", "utility1"),
-                    CustomNetTables.GetTableValue("property_ownership", "utility2"),
+                    this.propertyOwnership.GetValue("utility1"),
+                    this.propertyOwnership.GetValue("utility2"),
                 ];
                 let ownedUtilities = railroads.filter(railroad => railroad.owner === propertyState.owner).length;
                 return tile.multipliers[ownedUtilities - 1] * diceSum;
@@ -1495,20 +1811,8 @@ export class GameMode {
                     offsetVector = Vector(-100, 100);
                 }
                 currentHero.MoveToPosition((currentTile.GetAbsOrigin() + offsetVector) as Vector);
-            }            
-    
-            let currentTurn = CustomNetTables.GetTableValue("misc", "current_turn");
-            let rollOrder = CustomNetTables.GetTableValue("misc", "roll_order");
-            let currentIndex = Object.values(rollOrder).find(pID => currentTurn.pID === pID);
-            if (!currentIndex) { 
-                throw "Can't find the index :(";
             }
-            print(currentTurn);
-            DeepPrintTable(rollOrder);
-            let savedTurn: TurnState = { pID: rollOrder[tostring((currentIndex + 1) % Object.keys(rollOrder).length)], rolls: [], type: "transition"};
-            DeepPrintTable(savedTurn);
-            CustomNetTables.SetTableValue("misc", "current_turn", savedTurn);
-            this.StartTurn();
+            this.NextTurn();
         } else {
             let indicators: Partial<Record<Tiles, number>> = {};
             print(TilesReverseLookup);
@@ -1519,6 +1823,33 @@ export class GameMode {
             }
             CustomNetTables.SetTableValue("misc", "current_turn", {type: "start", pID: current.pID, rolls: current.turnState.rolls, indicators});
         }
+    }
+    public NextTurn() {
+        let currentTurn = CustomNetTables.GetTableValue("misc", "current_turn");
+        let rollOrder = CustomNetTables.GetTableValue("misc", "roll_order");
+        let currentIndex = Object.values(rollOrder).find(pID => currentTurn.pID === pID);
+        if (!currentIndex) { 
+            throw "Can't find the index :(";
+        }
+        let playerStates = Object.values(this.playerState.GetAllValues()).filter(player => player.alive === 1);
+        print("Have we won yet?", playerStates.length);
+        if (playerStates.length === 1) {
+            print("Win?");
+            // TODO: Replace with custom postgame as dedi servers instantly turn off when a winner is announced
+            GameRules.SetGameWinner(PlayerResource.GetPlayer(playerStates[0].pID)!.GetTeam());
+        }
+        let nextIndex = currentIndex as number;
+        let nextPlayer: PlayerState;
+        do {
+            nextIndex = (nextIndex + 1) % Object.keys(rollOrder).length;
+            let pID = rollOrder[tostring(nextIndex)];
+            nextPlayer = this.playerState.GetValue(tostring(pID));
+            print(nextPlayer.pID, nextPlayer.alive);
+        } while (nextPlayer.alive === 0);
+        let savedTurn: TurnState = { pID: nextPlayer.pID, rolls: [], type: "transition"};
+        DeepPrintTable(savedTurn);
+        CustomNetTables.SetTableValue("misc", "current_turn", savedTurn);
+        this.StartTurn();
     }
 
     // Called on script_reload
@@ -1557,4 +1888,7 @@ function ShuffleArray<T>(array: T[]): T[] {
     }
   
     return array;
+}
+function HudErrorMessage(message: string) {
+    FireGameEvent("dota_hud_error_message", { reason: 80, message });
 }

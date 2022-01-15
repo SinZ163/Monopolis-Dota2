@@ -9,14 +9,14 @@
         <!-- Snippets go here -->
     </snippets>
 
-    <ClientUIDialogPanel  hittest="false" class="MainHud">
+    <Panel hittest="false" hittestchildren="true" class="MainHud" require-composition-layer="true" always-cache-composition-layer="true">
         <Panel id="ExampleCorner">
 
             <Label id="CornerTextAbove" text="#jail_above" />
 
-            <Image id="CornerImage" src="file://{images}/spellicons/doom_bringer_doom.png" />
+            <Image id="CornerImage" src="s2r://panorama/images/spellicons/doom_bringer_doom_png.vtex" />
 
             <Label id="CornerTextBelow" text="#jail_below" />
         </Panel>
-    </ClientUIDialogPanel>
+    </Panel>
 </root>

@@ -67,6 +67,36 @@ function PropertyDefinitionListener(tilesObj: NetworkedData<Record<Tiles, SpaceD
                 colourPanel.AddClass("white");
                 break;
         }
+        for (let pID of Game.GetAllPlayerIDs()) {
+            let playerPropertyContainer = $(`#MoneyPropertyContainer_${pID}`);
+            const categoryContainerId = `MoneyPropertyContainer_${pID}_${tileInfo.categoryId}`;
+            let existingCategoryContainer = playerPropertyContainer.FindChildTraverse(categoryContainerId);
+            if (!existingCategoryContainer) {
+                existingCategoryContainer = $.CreatePanel("Panel", playerPropertyContainer, categoryContainerId);
+                existingCategoryContainer.AddClass("MoneyPropertyCategoryContainer");
+            }
+            let propTile = $.CreatePanel("Panel", existingCategoryContainer, `MoneyProperty_${pID}_${tile}`);
+            propTile.AddClass(`MoneyPropertyCategoryCell`);
+            propTile.AddClass(tileInfo.type === "property" ? tileInfo.category : tileInfo.type);
+            
+            const categoryTradeContainerId = `TradePlayerSlot_${pID}_${tileInfo.categoryId}`;
+            let tradePropertyContainer = $(`#TradePropertyContainer_${pID}`);
+            let existingTradeCategoryContainer = tradePropertyContainer.FindChildTraverse(categoryTradeContainerId);
+            if (!existingTradeCategoryContainer) {
+                existingTradeCategoryContainer = $.CreatePanel("Panel", tradePropertyContainer, categoryTradeContainerId);
+                existingTradeCategoryContainer.AddClass("TradePlayerSlotCategoryContainer");
+            }
+            let tradeTile = $.CreatePanel("Panel", existingTradeCategoryContainer, `TradeProperty_${pID}_${tile}`);
+            tradeTile.SetDraggable(true);
+            tradeTile.AddClass(`TradePropertyCategoryCell`);
+            tradeTile.AddClass(tileInfo.type === "property" ? tileInfo.category : tileInfo.type);
+            $.RegisterEventHandler("DragStart", tradeTile, OnTradePropertyDragStart);
+            $.RegisterEventHandler("DragEnd", tradeTile, OnTradePropertyDragEnd);
+            (tradeTile.Data() as any).category = tileInfo.type === "property" ? tileInfo.category : tileInfo.type;
+            (tradeTile.Data() as any).tile = tile;
+            (tradeTile.Data() as any).pID = pID;
+            (existingTradeCategoryContainer.Data() as any).pID = pID;
+        }
         OnPropertyChanged(tile, CustomNetTables.GetTableValue("property_ownership", tile));
     }
 }
@@ -87,7 +117,7 @@ function AuctionListener(value: NetworkedData<AuctionState>) {
         bidPanel.style.backgroundColor = ColorToHexCode2(Players.GetPlayerColor(bid.pID));
         $.Schedule(0, () => bidPanel.AddClass("Bid" + bid.amount));
 
-        (bidPanel.FindChildTraverse("AuctionBidAvatar") as AvatarImage).steamid = Game.GetPlayerInfo(bid.pID).player_steamid;        (bidPanel.FindChildTraverse("AuctionBidAvatar") as AvatarImage).steamid = Game.GetPlayerInfo(bid.pID).player_steamid;
+        (bidPanel.FindChildTraverse("AuctionBidAvatar") as AvatarImage).steamid = Game.GetPlayerInfo(bid.pID).player_steamid;
         (bidPanel.FindChildTraverse("AuctionBidName") as UserName).steamid = Game.GetPlayerInfo(bid.pID).player_steamid;
         (bidPanel.FindChildTraverse("AuctionBidLabel") as LabelPanel).text = $.Localize("monopolis_auction_bid" + bid.amount);
     }
@@ -98,12 +128,29 @@ function OnPropertyChanged(tile: PurchasableTiles, value: PropertyOwnership) {
     if (!existingPanel) {
         return;
     }
+
     // default to -2 so the -1's coming in from unowned cause the handler to run
     let currentOwner = existingPanel.GetAttributeInt("current_owner", -2);
     if (value.owner !== currentOwner) {
         existingPanel.RemoveClass(`Owner_${currentOwner}`);
         existingPanel.AddClass(`Owner_${value.owner}`);
         existingPanel.SetAttributeInt("current_owner", value.owner);
+    }
+    for (let pID of Game.GetAllPlayerIDs()) {
+        let playerTile = $(`#MoneyProperty_${pID}_${tile}`);
+        playerTile.SetHasClass("Unowned", value.owner === -1);
+        playerTile.SetHasClass("Hotel", value.owner === pID && value.houseCount === 5);
+        playerTile.SetHasClass("House", value.owner === pID && value.houseCount > 0 && value.houseCount < 5);
+        playerTile.SetHasClass("Owner", value.owner === pID && value.houseCount === 0);
+        playerTile.SetHasClass("Mortgaged", value.owner === pID && value.houseCount === -1);
+        playerTile.SetHasClass("Owned", value.owner > -1 && value.owner !== pID);
+        let tradeTile = $(`#TradeProperty_${pID}_${tile}`);
+        tradeTile.SetHasClass("Unowned", value.owner === -1);
+        tradeTile.SetHasClass("Hotel", value.owner === pID && value.houseCount === 5);
+        tradeTile.SetHasClass("House", value.owner === pID && value.houseCount > 0 && value.houseCount < 5);
+        tradeTile.SetHasClass("Owner", value.owner === pID && value.houseCount === 0);
+        tradeTile.SetHasClass("Mortgaged", value.owner === pID && value.houseCount === -1);
+        tradeTile.SetHasClass("Owned", value.owner > -1 && value.owner !== pID);
     }
     // TODO: Proper naming convention for houses / hotels
     // TODO: Block + and - buttons in correct conditions
@@ -130,12 +177,30 @@ function OnPropertyChanged(tile: PurchasableTiles, value: PropertyOwnership) {
     propertyStatus.text = $.Localize(text, propertyStatus);
 }
 
+function UIListener(state: NetworkedData<UIState>): void {
+    let currentState = $.GetContextPanel().GetAttributeString("currentuistate", "undefined");
+    $.Msg("UI Listener", currentState, state);
+    if (currentState !== "undefined") {
+        $.GetContextPanel().RemoveClass(currentState);
+    }
+    let type = "UI" + state.type.replace("/", "");
+    $.GetContextPanel().AddClass(type);
+    $.GetContextPanel().SetAttributeString("currentuistate", type);
+}
+
 CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
+    $.Msg(_, key, value);
     if (key === "price_definition") {
         return PropertyDefinitionListener(value as NetworkedData<Record<Tiles, SpaceDefinition>>);
     }
     if (key === "auction") {
         return AuctionListener(value as NetworkedData<AuctionState>);
+    }
+    if (key === "ui_state") {
+        return UIListener(value as NetworkedData<UIState>);
+    }
+    if (key === "trade") {
+        return TradeListener(value as NetworkedData<TradeState>);
     }
     if (key !== "current_turn") return;
     let currentState = $.GetContextPanel().GetAttributeString("currentstate", "undefined");
@@ -147,32 +212,27 @@ CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
         $.GetContextPanel().RemoveClass(currentState);
     }
     
-    // Why does TS think value.type is sometimes a number, nani
-    if (typeof(turnState.type) === "number") {
-        $.Msg("WARNING: Value.type is a number: ", key, "|", turnState);
-        return;
-    };
     $.GetContextPanel().AddClass(turnState.type);
     $.GetContextPanel().SetAttributeString("currentstate", turnState.type);
 
     let currentTurn = $.GetContextPanel().GetAttributeInt("currentturn", -1);
     if (turnState.pID !== currentTurn) {
         $.GetContextPanel().RemoveClass("JailDice");
+        $.GetContextPanel().RemoveClass("SellStuffRequired");
         $.GetContextPanel().RemoveClass("JailPreRolled");
         $.GetContextPanel().RemoveClass(`Turn_${currentTurn}`);
         $.GetContextPanel().AddClass(`Turn_${turnState.pID}`);
         $.GetContextPanel().SetAttributeInt("currentturn", turnState.pID);
 
-        const heroEntIndex = Players.GetPlayerHeroEntityIndex(turnState.pID);
-        GameUI.SetCameraTarget(heroEntIndex);
-
         let movementSchedule = $.GetContextPanel().GetAttributeInt("movementSchedule", -1);
         try {
+            $.Msg("Cancelling existing movement");
             if (movementSchedule > -1) {
                 $.CancelScheduled(movementSchedule as ScheduleID);
             }
-            MovementSchedule(true);
         } catch {}
+        $.Msg("Starting movement");
+        MovementSchedule(true);
     }
 
     let diceRolls = toArray(turnState.rolls);
@@ -180,6 +240,7 @@ CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
 
     try {
         if (!isDoubles && (turnState.type === "endturn" || turnState.type === "unowned" || turnState.type === "payrent")) {
+            $.Msg("Attempting to cancel movement due to turn being over");
             let movementSchedule = $.GetContextPanel().GetAttributeInt("movementSchedule", -1);
             if (movementSchedule > -1) {
                 $.CancelScheduled(movementSchedule as ScheduleID);
@@ -196,6 +257,7 @@ CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
             ($("#endturnLabel") as LabelPanel).text = $.Localize("endturn");
         }
     }
+    let playerState = CustomNetTables.GetTableValue("player_state", turnState.pID.toFixed(0));
 
     switch(turnState.type) {
         case "start":
@@ -213,6 +275,9 @@ CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
             break;
         case "payrent":
             $("#payrentLabel").SetDialogVariableInt("price", turnState.price);
+            if (turnState.price > playerState.money) {
+                $.GetContextPanel().AddClass("SellStuffRequired");
+            }
             break;
         case "jailed":
             $("#payrentLabel").SetDialogVariableInt("price", 50);
@@ -283,6 +348,21 @@ CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
                         $("#CardResultButtonText").SetDialogVariableInt("price", turnState.value);
                     }
             }
+            if (turnState.card.type === "money_lose" || turnState.card.type === "money_lose_others") {
+                let value = turnState.card.value;
+                if (turnState.card.type === "money_lose_others") {
+                    let playerStates = CustomNetTables.GetAllTableValues("player_state");
+                    let aliveOthers = playerStates.filter(player => player.value.pID !== turnState.pID && player.value.alive === 1);
+                    value = value * aliveOthers.length;
+                }
+                if (value > playerState.money) {
+                    $.GetContextPanel().AddClass("SellStuffRequired");
+                }
+            }
+            if (turnState.type === "auxroll_result" && turnState.value > playerState.money) {
+                $.GetContextPanel().AddClass("SellStuffRequired");
+            }
+            // TODO: Repairs
             let text: string;
             if (turnState.type === "auxroll_result") {
                 text = $.Localize("payrent", $("#CardResultButtonText"));
@@ -297,7 +377,6 @@ CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
             }
             break;
         case "endturn":
-            let playerState = CustomNetTables.GetTableValue("player_state", turnState.pID.toFixed(0));
             $.Msg(playerState);
             if (playerState.jailed > 0 && playerState.jailed < 3) {
                 $.GetContextPanel().AddClass("JailDice");
@@ -328,8 +407,12 @@ function Endturn() {
     GameEvents.SendCustomGameEventToServer("monopolis_endturn", {});
 }
 
+function Bankrupt() {
+    GameEvents.SendCustomGameEventToServer("monopolis_requestbankrupt", {});
+}
+
 function StartTrade() {
-    $("#TradeScreen").RemoveClass("Hidden");
+    GameEvents.SendCustomGameEventToServer("monopolis_requesttrade", {});
 }
 
 function DrawCard() {
@@ -352,25 +435,77 @@ function AuctionWithdraw() {
     GameEvents.SendCustomGameEventToServer("monopolis_auctionwithdraw", {});
 }
 
+let players = Game.GetAllPlayerIDs();
+for (let pID of players) {
+    let existingPanel = $(`#MoneyTable_${pID}`);
+    if (!existingPanel) {
+        $.Msg("MoneyTable for pID", pID, "deos not exist?");
+        existingPanel = $.CreatePanel("Panel", $("#MoneyTable"), `MoneyTable_${pID}`);
+        existingPanel.BLoadLayoutSnippet("MoneyTableRow");
+
+        (existingPanel.FindChildTraverse("Image") as AvatarImage).steamid = Game.GetPlayerInfo(pID).player_steamid;
+        (existingPanel.FindChildTraverse("Name") as UserName).steamid = Game.GetPlayerInfo(pID).player_steamid;
+        var propertyContainer = $.CreatePanel("Panel", existingPanel, `MoneyPropertyContainer_${pID}`);
+        propertyContainer.AddClass("MoneyPropertyContainer");
+    }
+    let existingTradePanel = $(`#TradePlayerSlot_${pID}`);
+    if (!existingTradePanel) {
+        $.Msg("TradePlayerSlot for pID", pID, "does not exist?", );
+        existingTradePanel = $.CreatePanel("Panel", $("#TradePlayerSlots"), `TradePlayerSlot_${pID}`);
+        existingTradePanel.BLoadLayoutSnippet("TradePlayerSlotEntry");
+
+        (existingTradePanel.FindChildTraverse("PlayerImage") as AvatarImage).steamid = Game.GetPlayerInfo(pID).player_steamid;
+        (existingTradePanel.FindChildTraverse("PlayerName") as UserName).steamid = Game.GetPlayerInfo(pID).player_steamid;
+        var propertyContainer = $.CreatePanel("Panel", existingTradePanel, `TradePropertyContainer_${pID}`);
+        propertyContainer.AddClass("TradePropertyContainer");
+        $.RegisterEventHandler("DragEnter", propertyContainer, OnTradePropertyDragEnter);
+        $.RegisterEventHandler("DragLeave", propertyContainer, OnTradePropertyDragLeave);
+        $.RegisterEventHandler("DragDrop", propertyContainer, OnTradePropertyDragDrop);
+        (propertyContainer.Data() as any).pID = pID;
+        var moneyContainer = existingTradePanel.FindChildTraverse("TransferMoney") as NumberEntry;
+        $.RegisterEventHandler("DragStart", moneyContainer, OnTradeMoneyDragStart);
+        $.RegisterEventHandler("DragEnd", moneyContainer, OnTradeMoneyDragEnd);
+        (moneyContainer.Data() as any).pID = pID;
+    }
+}
+
 CustomNetTables.SubscribeNetTableListener("player_state", (_, pID, state) => {
     $.Msg("Hud.ts", _, pID, state);
     let existingPanel = $(`#MoneyTable_${pID}`);
     if (!existingPanel) {
-        $.Msg("Doesn't exist?");
-        existingPanel = $.CreatePanel("Panel", $("#MoneyTable"), `MoneyTable_${pID}`);
-        existingPanel.BLoadLayoutSnippet("MoneyTableRow");
-
-        (existingPanel.FindChildTraverse("Image") as AvatarImage).steamid = Game.GetPlayerInfo(Number.parseInt(pID) as PlayerID).player_steamid;
-        (existingPanel.FindChildTraverse("Name") as UserName).steamid = Game.GetPlayerInfo(Number.parseInt(pID) as PlayerID).player_steamid;
+        $.Msg("Doesn't exist, wtf?!?");
     }
     (existingPanel.FindChildTraverse("GoldAmount") as LabelPanel).text = state.money.toFixed(0);
-        existingPanel.style.backgroundColor = ColorToHexCode2(Players.GetPlayerColor(Number.parseInt(pID) as PlayerID));
+    existingPanel.style.borderColor = ColorToHexCode2(Players.GetPlayerColor(Number.parseInt(pID) as PlayerID));
 
     let currentTurn = $.GetContextPanel().GetAttributeInt("currentturn", -1);
-    // Jailed people dont get to reroll
-    if (currentTurn === state.pID && state.jailed > 0) {
-        ($("#endturnLabel") as LabelPanel).text = $.Localize("endturn");
-    } 
+    
+    if (currentTurn === state.pID) {
+        // Jailed people dont get to reroll
+        if (state.jailed > 0) {
+            ($("#endturnLabel") as LabelPanel).text = $.Localize("endturn");
+        }
+        let turnState = CustomNetTables.GetTableValue("misc", "current_turn");
+        if (turnState.type === "payrent" && state.money >= turnState.price) {
+            $.GetContextPanel().RemoveClass("SellStuffRequired");
+        }
+        else if (turnState.type === "card_result") {
+            if (turnState.card.type === "money_lose" || turnState.card.type === "money_lose_others") { 
+                let value = turnState.card.value;
+                if (turnState.card.type === "money_lose_others") {
+                    let playerStates = CustomNetTables.GetAllTableValues("player_state");
+                    let aliveOthers = playerStates.filter(player => player.value.pID !== turnState.pID && player.value.alive === 1);
+                    value = value * aliveOthers.length;
+                }
+                if (state.money >= value) {
+                    $.GetContextPanel().RemoveClass("SellStuffRequired");
+                }
+            }
+        }
+        else if (turnState.type === "auxroll_result" && state.money >= turnState.value) {
+            $.GetContextPanel().RemoveClass("SellStuffRequired");
+        }
+    }
 });
 
 
@@ -429,25 +564,32 @@ function MovementSchedule(start = false) {
     if (currentTurn === -1) return;
     const heroEntIndex = Players.GetPlayerHeroEntityIndex(currentTurn as PlayerID);
     const heroLoc = Entities.GetAbsOrigin(heroEntIndex);
-    let currentYaw = GameUI.GetCameraYaw();
-    let newYaw = -1;
-    if (heroLoc[1] < -1100) {
-        newYaw = 0+45;
-    } else if (heroLoc[0] < -1800) {
-        newYaw = 270+45;
-    } else if (heroLoc[0] > 1800) {
-        newYaw = 90+45;
-    } else {
-        newYaw = 180+45;
+    if (heroLoc) {
+
+        const heroEntIndex = Players.GetPlayerHeroEntityIndex(currentTurn as PlayerID);
+        GameUI.SetCameraTarget(heroEntIndex);
+
+        let currentYaw = GameUI.GetCameraYaw();
+        let newYaw = -1;
+        if (heroLoc[1] < -1100) {
+            newYaw = 0+45;
+        } else if (heroLoc[0] < -1800) {
+            newYaw = 270+45;
+        } else if (heroLoc[0] > 1800) {
+            newYaw = 90+45;
+        } else {
+            newYaw = 180+45;
+        }
+        if (start) {
+            $.Msg(`Hero Location: ${heroLoc}, current: ${currentYaw} new: ${newYaw}`);
+        }
+        if (currentYaw !== newYaw) {
+            $.Msg(`Changing yaw to ${newYaw} due to location ${heroLoc}`);
+            GameUI.SetCameraYaw(newYaw);
+            GameUI.SetCameraPitchMax(30);
+        }    
     }
-    if (start) {
-        $.Msg(`Hero Location: ${heroLoc}, current: ${currentYaw} new: ${newYaw}`);
-    }
-    if (currentYaw !== newYaw) {
-        $.Msg(`Changing yaw to ${newYaw} due to location ${heroLoc}`);
-        GameUI.SetCameraYaw(newYaw);
-        GameUI.SetCameraPitchMax(30);
-    }    
+    
 
     $.GetContextPanel().SetAttributeInt("movementSchedule", $.Schedule(MOVEMENT_SCHEDULE_TIMER, MovementSchedule));
 }

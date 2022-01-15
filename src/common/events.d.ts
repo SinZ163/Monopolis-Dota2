@@ -23,15 +23,21 @@ interface CustomGameEventDeclarations {
     // Available in state card_prompt
     monopolis_requestcard: MonopolisEmptyEvent, //C-->S
     // Available in state card_result
-    monopolis_acknowledgecard: MonopolisEmptyEvent,
+    monopolis_acknowledgecard: MonopolisEmptyEvent, //C-->S
     // Available in state endturn
     monopolis_endturn: MonopolisEmptyEvent, //C-->S
+    // Available in state endturn, payrent* and card_result*
     monopolis_requestrenovation: MonopolisRenovationEvent,  //C-->S
+    monopolis_requesttrade: MonopolisEmptyEvent, //C-->S
 
+    // Available in state payrent* and card_result*
+    monopolis_requestbankrupt: MonopolisEmptyEvent, //C-->S
 
     // Available in state auction
     monopolis_auctionbid: MonopolisAuctionBid, //C-->S
-    monopolis_auctionwithdraw: MonopolisEmptyEvent, //C-->s
+    monopolis_auctionwithdraw: MonopolisEmptyEvent, //C-->S
+
+    monopolis_trade: MonopolisTradeEvent, //C-->S
 }
 
 interface CustomNetTableDeclarations {
@@ -45,9 +51,22 @@ interface CustomNetTableDeclarations {
             hotels: number,
         },
         price_definition: Record<Tiles,SpaceDefinition>,
-        auction: AuctionState
+        auction: AuctionState,
+        trade: TradeState,
+        ui_state: UIState
     }
 }
+
+interface NullUIState {
+    type: "n/a";
+}
+interface BankruptConfirmationUIState {
+    type: "bankrupt_confirm";
+}
+interface TradeUIState {
+    type: "trade";
+}
+type UIState = NullUIState | BankruptConfirmationUIState | TradeUIState;
 
 
 interface PropertyOwnership {
@@ -60,6 +79,7 @@ interface PlayerState {
     money: number;
     location: number;
     jailed: number;
+    alive: 0|1;
 }
 
 
@@ -81,3 +101,40 @@ interface MonopolisRenovationEvent {
 interface MonopolisAuctionBid {
     amount: 10|50|100,
 }
+
+interface MonopolisAddPropertyTradeEvent {
+    type: "add_property",
+    property: PurchasableTiles,
+    from: PlayerID,
+    to: PlayerID,
+}
+interface MonopolisAddMoneyTradeEvent {
+    type: "add_money",
+    money: number,
+    from: PlayerID,
+    to: PlayerID,
+}
+interface MonopolisRemovePropertyTradeEvent {
+    type: "remove_property",
+    property: PurchasableTiles
+}
+interface MonopolisRemoveMoneyTradeEvent {
+    type: "remove_money",
+    money: number,
+    from: PlayerID,
+    to: PlayerID,
+}
+interface MonopolisConfirmTradeEvent {
+    type: "confirm"
+}
+interface MonopolisCancelTradeEvent {
+    type: "cancel"
+}
+interface MonopolisAcceptTradeEvent {
+    type: "accept"
+}
+interface MonopolisRejectTradeEvent {
+    type: "reject"
+}
+
+type MonopolisTradeEvent = MonopolisAddPropertyTradeEvent | MonopolisRemovePropertyTradeEvent | MonopolisAddMoneyTradeEvent | MonopolisRemoveMoneyTradeEvent | MonopolisConfirmTradeEvent | MonopolisCancelTradeEvent | MonopolisAcceptTradeEvent | MonopolisRejectTradeEvent;

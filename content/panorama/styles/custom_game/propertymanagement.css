@@ -2,8 +2,7 @@
     vertical-align: center;
     horizontal-align: right;
 
-    width: 500px;
-    height: 800px;
+    width: 540px;
 
     flow-children: down;
 
@@ -12,6 +11,11 @@
 
 .PropertyManagementRow {
     flow-children: right;
+}
+
+#PropertyColour {
+    width: 35px;
+    height: 35px;
 }
 
 #PropertyName {
@@ -40,8 +44,8 @@
     border-width: 1px;
     border-color: grey;
     border-style: solid;
-    width: 40px;
-    height: 40px;
+    width: 35px;
+    height: 35px;
 }
 #BuyHouse Label,
 #SellHouse Label {
@@ -67,4 +71,40 @@
 .Turn_4 .Owner_4,
 .Turn_5 .Owner_5 {
     visibility: visible;
+}
+
+
+
+#PropertyColour.brown {
+    background-color: brown;
+}
+#PropertyColour.teal {
+    background-color: cyan;
+}
+#PropertyColour.magenta {
+    background-color: magenta;
+}
+#PropertyColour.orange {
+    background-color: orange;
+}
+#PropertyColour.red {
+    background-color: red;
+}
+#PropertyColour.yellow {
+    background-color: yellow;
+}
+#PropertyColour.green {
+    background-color: green;
+}
+#PropertyColour.blue {
+    background-color: blue;
+}
+#PropertyColour.black {
+    background-color: black;
+    border-color: white;
+    border-width: 1px;
+    border-style: solid;
+}
+#PropertyColour.white {
+    background-color: white;
 }

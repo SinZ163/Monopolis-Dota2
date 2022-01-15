@@ -137,6 +137,9 @@ interface BaseState {
     pID: PlayerID;
     rolls: Array<{dice1: number, dice2: number}>,
 }
+interface BankruptableState extends BaseState {
+    potentialBankrupt: PlayerID;
+}
 
 interface TransitionTurnState extends BaseState {
     type: "transition";
@@ -159,7 +162,7 @@ interface DiceRollState extends BaseState {
     dice1: number;
     dice2: number;
 }
-interface PayRentState extends BaseState {
+interface PayRentState extends BankruptableState {
     type: "payrent";
     property: PricedTiles;
     price: number;
@@ -177,7 +180,7 @@ interface CardPendingState extends BaseState {
     type: "card_prompt",
     deck: Deck
 }
-interface CardResultState extends BaseState {
+interface CardResultState extends BankruptableState {
     type: "card_result",
     card: CardAction,
 }
@@ -186,7 +189,7 @@ interface AuxRollPromptState extends BaseState {
     type: "auxroll_prompt",
     card: CardAction,
 }
-interface AuxRollResultState extends BaseState {
+interface AuxRollResultState extends BankruptableState {
     type: "auxroll_result",
     card: CardAction,
     dice1: number,
@@ -258,4 +261,31 @@ interface AuctionState {
         pID: PlayerID,
         amount: number
     }>
+}
+
+interface PropertyTradeOffer {
+    type: "property";
+    property: PurchasableTiles;
+    from: PlayerID;
+    to: PlayerID;
+}
+interface MoneyTradeOffer {
+    type: "money";
+    money: number;
+    from: PlayerID;
+    to: PlayerID;
+}
+type TradeOffers = PropertyTradeOffer | MoneyTradeOffer;
+interface TradeState {
+    initiator: PlayerID,
+    current: PlayerID,
+    participants: PlayerID[],
+    offers: TradeOffers[],
+    deltaMoney: Partial<Record<PlayerID, number>>,
+    confirmations: Partial<Record<PlayerID, boolean>>,
+    status: TradeStateStatus
+}
+declare const enum TradeStateStatus {
+    ModifyTrade,
+    Confirmation,
 }

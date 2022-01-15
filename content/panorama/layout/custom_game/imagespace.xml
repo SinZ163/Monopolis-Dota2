@@ -14,7 +14,7 @@
         <!-- Snippets go here -->
     </snippets>
 
-    <ClientUIDialogPanel class="ImageSpace" onactivate="OnClick()">
+    <Panel hittest="false" hittestchildren="true" class="ImageSpace" onactivate="OnClick()" require-composition-layer="true" always-cache-composition-layer="true">
         <Panel id="ExampleSpace">
 
             <Label id="SpaceName" text="WHITECHAPEL ROAD" />
@@ -23,9 +23,9 @@
 
             <Panel id="PriceContainer">
                 <Label id="PaymentText" text="" />
-                <Panel id="GoldIcon" />
+                <Panel class="GoldIcon" />
                 <Label id="SpacePrice" text="420" />
             </Panel>
         </Panel>
-    </ClientUIDialogPanel>
+    </Panel>
 </root>

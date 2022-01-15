@@ -9,11 +9,11 @@
         <!-- Snippets go here -->
     </snippets>
 
-    <ClientUIDialogPanel  hittest="false" class="Chance">
+    <Panel hittest="false" hittestchildren="true" class="Chance" require-composition-layer="true" always-cache-composition-layer="true">
         <Panel id="Chance">
             <Label id="SpaceName" text="#tile_chance" />
 
-            <Image id="Image" src="file://{images}/spellicons/ogre_magi_multicast.png"/>
+            <Image id="Image" src="s2r://panorama/images/spellicons/ogre_magi_multicast_png.vtex"/>
         </Panel>
-    </ClientUIDialogPanel>
+    </Panel>
 </root>
