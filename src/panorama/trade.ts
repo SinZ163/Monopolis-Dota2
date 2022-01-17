@@ -125,6 +125,6 @@ function TradeCancel() {
 function TradeAccept() {
     GameEvents.SendCustomGameEventToServer("monopolis_trade", {type: "accept"});
 }
-function TraceReject() {
+function TradeReject() {
     GameEvents.SendCustomGameEventToServer("monopolis_trade", {type: "reject"});
 }

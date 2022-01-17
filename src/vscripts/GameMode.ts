@@ -588,9 +588,9 @@ export class GameMode {
         // TODO: restricted trade scenarios
         if (uiState.type !== "trade") return;
         let tradeState = this.miscState.GetValue("trade");
-        if (!IsInToolsMode() && event.PlayerID !== tradeState.current) {return;}
         let participantSet = new Set(tradeState.participants);
         if (tradeState.status === TradeStateStatus.ModifyTrade) {
+            if (!IsInToolsMode() && event.PlayerID !== tradeState.current) {return;}
             if (event.type === "add_property") {
                 let propertyState = this.propertyOwnership.GetValue(event.property);
                 // Only allow it going from the intended owner
@@ -640,7 +640,13 @@ export class GameMode {
                 CustomNetTables.SetTableValue("misc", "ui_state", {type: "n/a"});
             }
         } else if (tradeState.status === TradeStateStatus.Confirmation) {
-            if (event.type === "accept") {
+            if (!IsInToolsMode() && tradeState.participants.indexOf(event.PlayerID) === -1) return;
+            // Tools only hack to force all to be "true"
+            if (IsInToolsMode() && event.type === "confirm") {
+                for (let participant of participantSet) {
+                    tradeState.confirmations[participant] = true;
+                }
+            } else if (event.type === "accept") {
                 tradeState.confirmations[event.PlayerID] = true;
             }
             else if (event.type === "reject") {
@@ -648,11 +654,6 @@ export class GameMode {
                 Timers.CreateTimer(3, () => {
                     CustomNetTables.SetTableValue("misc", "ui_state", {type: "n/a"});
                 });
-            // Tools only hack to force all to be "true"
-            } else if (IsInToolsMode() && event.type === "confirm") {
-                for (let participant of participantSet) {
-                    tradeState.confirmations[participant] = true;
-                }
             }
             let isSuccess = true;
             for (let participant of participantSet) {
@@ -733,6 +734,34 @@ export class GameMode {
         }
     }
     AdvanceAuctionTurn(auctionState: AuctionState) {
+        let current = this.GetCurrentPlayerState();
+        if (current.turnState.type !== "auction") return;
+        let numRemaining = 0;
+        for (let player of Object.values(auctionState.playerStates)) {
+            if (!player.hasWithdrawn) {
+                numRemaining++;
+            }
+        }
+        if (numRemaining < 2) {
+            print("All withdrawn");
+            if (numRemaining === 0 && auctionState.current_owner === -1) {
+                HudErrorMessage("#monopolis_auction_failed");
+                CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID, rolls: current.turnState.rolls});
+                return;
+            } else if (auctionState.current_owner !== -1) {
+                let bidder = this.playerState.GetValue(tostring(auctionState.current_owner));
+                bidder.money -= auctionState.current_bid;
+                let property = this.propertyOwnership.GetValue(current.turnState.property);
+                property.owner = auctionState.current_owner;
+                this.propertyOwnership.SetValue(current.turnState.property, property);
+                this.SavePlayer(bidder);
+                CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID, rolls: current.turnState.rolls});
+                return;
+            } else {
+                // valid scenario, continue
+            }
+        }
+
         let rollOrder = CustomNetTables.GetTableValue("misc", "roll_order");
         do {
             let currentIndex = Object.values(rollOrder).find(pID => auctionState.current_bidder === pID);
@@ -758,36 +787,15 @@ export class GameMode {
         }
         playerState.hasWithdrawn = true;
 
-        let allWithdrawn = true;
-        for (let player of Object.values(auctionState.playerStates)) {
-            if (!player.hasWithdrawn) {
-                allWithdrawn = false;
-                break;
-            }
-        }
-        if (allWithdrawn) {
-            print("All withdrawn");
-            if (auctionState.current_owner === -1) {
-                HudErrorMessage("#monopolis_auction_failed");
-            } else {
-                let bidder = this.playerState.GetValue(tostring(auctionState.current_owner));
-                bidder.money -= auctionState.current_bid;
-                let property = this.propertyOwnership.GetValue(current.turnState.property);
-                property.owner = auctionState.current_owner;
-                this.propertyOwnership.SetValue(current.turnState.property, property);
-                this.SavePlayer(bidder);
-            }
-            CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID, rolls: current.turnState.rolls});
-        } else {
-            this.AdvanceAuctionTurn(auctionState);
-        }
+        this.AdvanceAuctionTurn(auctionState);
     }
     AuctionBid(user: EntityIndex, event: { amount: 10 | 50 | 100; PlayerID: PlayerID; }): void {
         let current = this.GetCurrentPlayerState();
         if (current.turnState.type !== "auction") return;
         let auctionState = this.GetAuctionState();
         if (!IsInToolsMode() && auctionState.current_bidder !== event.PlayerID) return;
-        if ((event.amount + auctionState.current_bid) > current.money) {
+        let playerState = this.playerState.GetValue(tostring(auctionState.current_bidder));
+        if ((event.amount + auctionState.current_bid) > playerState.money) {
             HudErrorMessage("#monopolis_auction_broke");
             return;
         }
@@ -1123,10 +1131,9 @@ export class GameMode {
 
         CustomNetTables.SetTableValue("misc", "current_turn", {type: "auction", pID: current.pID, rolls: current.turnState.rolls, property: current.turnState.property});
         let playerStates: Partial<Record<PlayerID, AuctionPlayerState>> = {};
-        for (let i = 0; i < DOTA_MAX_PLAYERS; i++) {
-            if (PlayerResource.IsValidPlayer(i)) {
-                playerStates[i] = {hasWithdrawn: false}
-            }
+        let playerInfo = this.playerState.GetAllValues();
+        for (let player of Object.values(playerInfo)) {
+            playerStates[player.pID] = {hasWithdrawn: player.alive === 0}
         }
         CustomNetTables.SetTableValue("misc", "auction", {
             current_bid: 0,

@@ -101,6 +101,10 @@ function PropertyDefinitionListener(tilesObj: NetworkedData<Record<Tiles, SpaceD
     }
 }
 function AuctionListener(value: NetworkedData<AuctionState>) {
+    let currentPlayerColor = ColorToHexCode2(Players.GetPlayerColor(value.current_bidder));
+    $("#AuctionButtons").style.backgroundColor = `gradient ( linear, 0% 100%, 100% 0%, from( #00000000 ), to( ${currentPlayerColor} ) );`;
+    ($("#AuctionButtons").style as any).backgroundColorOpacity = 1.0;
+    //$("#AuctionButtons").style.backgroundColor = `gradient( radial, 50% 50%, 0% 0%, 20% 20%, from( #000000ff ), to( ${currentPlayerColor}ff ) );`;
     let historicalBidCount = $("#AuctionScreen").GetAttributeInt("historicalBids", 0);
     ($("#AuctionValueText") as LabelPanel).text = value.current_bid.toFixed(0);
     let bids = toArray(value.historical_bids);
