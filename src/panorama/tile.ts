@@ -74,10 +74,7 @@ if (filename) {
     spaceName.text = $.Localize("#tile_" + tilename);
 }
 
-CustomNetTables.SubscribeNetTableListener("misc", (tableName, key, value) => {
-    if (key !== "price_definition") return;
-    let tilesObj = value as Record<Tiles, SpaceDefinition>;
-    
+SubscribeNetTableKey("misc", "price_definition", tilesObj => {    
     let spacePrice = $("#SpacePrice") as LabelPanel;
     let tile = tilesObj[tilename];
     let price: number|undefined = undefined;

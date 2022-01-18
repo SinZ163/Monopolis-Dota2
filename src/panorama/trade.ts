@@ -1,13 +1,14 @@
 function OnTradePropertyDragStart(panel: Panel, callback: any) {
     $.Msg("DragStart", panel);
     $.Msg("DragStart2", callback);
-    if (panel.BHasClass("Owner")) {
+    if (panel.BHasClass("Owner") || panel.BHasClass("Mortgaged")) {
         let displayPanel = $.CreatePanel("Panel", panel, "TradeDragImage");
         (displayPanel.Data() as any).tile = (panel.Data() as any).tile;
         (displayPanel.Data() as any).category = (panel.Data() as any).category;
         (displayPanel.Data() as any).pID = (panel.Data() as any).pID;
         displayPanel.AddClass((panel.Data() as any).category);
-        displayPanel.AddClass("Owner");
+        displayPanel.SetHasClass("Owner", panel.BHasClass("Owner"));
+        displayPanel.SetHasClass("Mortgaged", panel.BHasClass("Mortgaged"));
         displayPanel.AddClass("TradePropertyCategoryCell");
         callback.displayPanel = displayPanel;
         callback.offsetX = 0;
@@ -60,7 +61,7 @@ function OnTradeMoneyDragEnd(panel: Panel, draggedPanel: Panel) {
     return true;
 }
 
-function TradeListener(tradeState: NetworkedData<TradeState>): void {
+SubscribeNetTableKey("misc", "trade", tradeState => {
     $.Msg(tradeState);
     $("#TradeSummary").RemoveAndDeleteChildren();
     for (let [i, offer] of Object.entries(toArray(tradeState.offers))) {
@@ -114,7 +115,7 @@ function TradeListener(tradeState: NetworkedData<TradeState>): void {
             (playerPanel.FindChildTraverse("PlayerImage") as AvatarImage).steamid = Game.GetPlayerInfo(participant).player_steamid;
         }
     }
-}
+});
 
 function TradeConfirm() {
     GameEvents.SendCustomGameEventToServer("monopolis_trade", {type: "confirm"});

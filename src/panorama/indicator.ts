@@ -5,6 +5,7 @@ if (indicatorFilename) {
     let tile = indicatorFilename.split("\\")[indicatorFilename.split("\\").length - 1];
     if (tile.endsWith(".xml")) {
         indicatorname = tile.substr(0, tile.length - 4) as Tiles;
+        $.GetContextPanel().AddClass("Hidden");
     } else {
         throw "wtf";
     }
@@ -12,22 +13,18 @@ if (indicatorFilename) {
     throw "wtf2";
 }
 
-CustomNetTables.SubscribeNetTableListener("property_ownership", (_, tile, value) => {
-    if (tile !== indicatorname) return;
-    $.Msg("Property Ownership changed", tile, value);
+SubscribeNetTableKey("property_ownership", indicatorname as PurchasableTiles, value => {
     if (value.owner > -1) {
-        $.Msg("Found owner", tile, value.owner);
+        $.Msg("Found owner", indicatorname, value.owner);
         let colour = ColorToHexCode(Players.GetPlayerColor(value.owner));
         $.GetContextPanel().style.backgroundColor = colour;
     } else {
-        $.Msg("No owner :(", tile, value.owner);
+        $.Msg("No owner :(", indicatorname, value.owner);
         $.GetContextPanel().style.backgroundColor = "#FFFFFF";
     }
-})
+});
 
-CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
-    if (key !== "current_turn") return;
-    let turnState = value as TurnState;
+SubscribeNetTableKey("misc", "current_turn", turnState => {
     if (turnState.type === "start" || turnState.type === "jailed") {
         if (turnState.indicators[indicatorname] !== undefined) {
             $.GetContextPanel().RemoveClass("Hidden");

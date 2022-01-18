@@ -1,6 +1,6 @@
 const MOVEMENT_SCHEDULE_TIMER = 0.1;
 
-function PropertyDefinitionListener(tilesObj: NetworkedData<Record<Tiles, SpaceDefinition>>) {
+SubscribeNetTableKey("misc", "price_definition", tilesObj => {
     $.Msg("Property Definition Listener firing");
     let purchasabletiles = Object.entries(tilesObj).filter(([k,v]) => v.type === "property" || v.type === "railroad" || v.type === "utility") as Array<[PurchasableTiles, NetworkedData<PropertyDefinition|RailroadDefinition|UtilityDefinition>]>;
     for (let [tileStr, tileInfo] of purchasabletiles.sort((a,b) => (a[1].categoryId - b[1].categoryId) === 0 ? a[1].index - b[1].index : a[1].categoryId - b[1].categoryId)) {
@@ -99,8 +99,9 @@ function PropertyDefinitionListener(tilesObj: NetworkedData<Record<Tiles, SpaceD
         }
         OnPropertyChanged(tile, CustomNetTables.GetTableValue("property_ownership", tile));
     }
-}
-function AuctionListener(value: NetworkedData<AuctionState>) {
+});
+
+SubscribeNetTableKey("misc", "auction", value => {
     let currentPlayerColor = ColorToHexCode2(Players.GetPlayerColor(value.current_bidder));
     $("#AuctionButtons").style.backgroundColor = `gradient ( linear, 0% 100%, 100% 0%, from( #00000000 ), to( ${currentPlayerColor} ) );`;
     ($("#AuctionButtons").style as any).backgroundColorOpacity = 1.0;
@@ -126,7 +127,8 @@ function AuctionListener(value: NetworkedData<AuctionState>) {
         (bidPanel.FindChildTraverse("AuctionBidLabel") as LabelPanel).text = $.Localize("monopolis_auction_bid" + bid.amount);
     }
     $("#AuctionScreen").SetAttributeInt("historicalBids", bids.length);
-}
+
+});
 function OnPropertyChanged(tile: PurchasableTiles, value: PropertyOwnership) {
     let existingPanel = $(`#PropertyManagement_${tile}`);
     if (!existingPanel) {
@@ -181,7 +183,7 @@ function OnPropertyChanged(tile: PurchasableTiles, value: PropertyOwnership) {
     propertyStatus.text = $.Localize(text, propertyStatus);
 }
 
-function UIListener(state: NetworkedData<UIState>): void {
+SubscribeNetTableKey("misc", "ui_state", state => {
     let currentState = $.GetContextPanel().GetAttributeString("currentuistate", "undefined");
     $.Msg("UI Listener", currentState, state);
     if (currentState !== "undefined") {
@@ -190,26 +192,11 @@ function UIListener(state: NetworkedData<UIState>): void {
     let type = "UI" + state.type.replace("/", "");
     $.GetContextPanel().AddClass(type);
     $.GetContextPanel().SetAttributeString("currentuistate", type);
-}
 
-CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
-    $.Msg(_, key, value);
-    if (key === "price_definition") {
-        return PropertyDefinitionListener(value as NetworkedData<Record<Tiles, SpaceDefinition>>);
-    }
-    if (key === "auction") {
-        return AuctionListener(value as NetworkedData<AuctionState>);
-    }
-    if (key === "ui_state") {
-        return UIListener(value as NetworkedData<UIState>);
-    }
-    if (key === "trade") {
-        return TradeListener(value as NetworkedData<TradeState>);
-    }
-    if (key !== "current_turn") return;
+});
+
+SubscribeNetTableKey("misc", "current_turn", turnState => {
     let currentState = $.GetContextPanel().GetAttributeString("currentstate", "undefined");
-    let turnState = value as TurnState;
-    $.Msg(_, "|", key, "|", turnState);
     $.Msg(currentState, "|", turnState.type);
 
     if (currentState !== "undefined") {
@@ -390,6 +377,7 @@ CustomNetTables.SubscribeNetTableListener("misc", (_, key, value) => {
             }
             break;
     }
+
 });
 
 function RollDice() {
@@ -473,7 +461,8 @@ for (let pID of players) {
     }
 }
 
-CustomNetTables.SubscribeNetTableListener("player_state", (_, pID, state) => {
+
+SubscribeNetTableAll("player_state", (_, pID, state) => {
     $.Msg("Hud.ts", _, pID, state);
     let existingPanel = $(`#MoneyTable_${pID}`);
     if (!existingPanel) {

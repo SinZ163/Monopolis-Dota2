@@ -4,7 +4,7 @@ import { modifier_gomoney } from "./modifiers/modifier_gomoney";
 import { modifier_movetotile } from "./modifiers/modifier_movetotile";
 import { modifier_vision } from "./modifiers/modifier_vision";
 
-const heroSelectionTime = 20;
+const heroSelectionTime = 60;
 
 declare global {
     interface CDOTAGamerules {
@@ -596,6 +596,12 @@ export class GameMode {
                 // Only allow it going from the intended owner
                 if (event.from !== propertyState.owner) return;
                 if (event.from === event.to) return;
+                let fromPlayer = this.playerState.GetValue(tostring(event.from));
+                let toPlayer = this.playerState.GetValue(tostring(event.to));
+                if (toPlayer.alive === 0 || fromPlayer.alive === 0) {
+                    HudErrorMessage("#monpolis_trade_dead");
+                    return;
+                }
                 if (propertyState.houseCount > 0) {
                     HudErrorMessage("#monopolis_trade_improvement");
                     return;
@@ -614,6 +620,11 @@ export class GameMode {
             } else if (event.type === "add_money") {
                 let fromPlayer = this.playerState.GetValue(tostring(event.from));
                 if (event.from === event.to) return;
+                let toPlayer = this.playerState.GetValue(tostring(event.to));
+                if (toPlayer.alive === 0 || fromPlayer.alive === 0) {
+                    HudErrorMessage("#monpolis_trade_dead");
+                    return;
+                }
                 if (fromPlayer.money + (tradeState.deltaMoney[event.from] ?? 0) < event.money) {
                     HudErrorMessage("#monopolis_trade_broke");
                     return;
@@ -1346,6 +1357,15 @@ export class GameMode {
                     GameRules.FinishCustomGameSetup();
                 });
             }
+        }
+        if (state === GameState.HERO_SELECTION) {
+            Timers.CreateTimer(heroSelectionTime - 0.1, () => {
+                for (let pID = 0; pID < DOTA_MAX_PLAYERS; pID++) {
+                    if (PlayerResource.IsValidPlayer(pID) && !PlayerResource.HasSelectedHero(pID)) {
+                        PlayerResource.GetPlayer(pID)?.MakeRandomHeroSelection();
+                    }
+                }
+            });
         }
     }
 
