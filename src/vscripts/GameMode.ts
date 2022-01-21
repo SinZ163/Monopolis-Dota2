@@ -1,3 +1,4 @@
+import stats, { initiate } from "./lib/moddota-stats";
 import { reloadable, toArray } from "./lib/tstl-utils";
 import LocalNetTables from "./LocalNetTables";
 import { modifier_gomoney } from "./modifiers/modifier_gomoney";
@@ -539,6 +540,9 @@ export class GameMode {
     public static Activate(this: void) {
         // When the addon activates, create a new instance of this GameMode class.
         GameRules.Addon = new GameMode();
+        initiate({
+            workshopId: "2701619563"
+        });
     }
 
     private currentDecks: Record<"chance"|"communitybreast", CardAction[]> = {
@@ -686,8 +690,8 @@ export class GameMode {
                             let playerToState = this.playerState.GetValue(tostring(offer.to));
                             playerFromState.money -= offer.money;
                             playerToState.money += offer.money;
-                            this.playerState.SetValue(tostring(offer.from), playerFromState);
-                            this.playerState.SetValue(tostring(offer.to), playerToState);
+                            this.SavePlayer(playerFromState);
+                            this.SavePlayer(playerToState);
                         }
                     }
                 });
@@ -1220,7 +1224,7 @@ export class GameMode {
         if (current.turnState.potentialBankrupt !== -1) {
             let asshole = this.playerState.GetValue(tostring(current.turnState.potentialBankrupt));
             asshole.money += current.money;
-            this.playerState.SetValue(tostring(asshole.pID), asshole);
+            this.SavePlayer(asshole);
             let assholePlayer = PlayerResource.GetPlayer(asshole.pID);
             let assholeHero = assholePlayer?.GetAssignedHero();
             hero?.Kill(undefined, assholeHero);
@@ -1232,7 +1236,7 @@ export class GameMode {
         }
         current.money = 0;
         current.alive = 0;
-        this.playerState.SetValue(tostring(current.pID), current);
+        this.SavePlayer(current);
         CustomNetTables.SetTableValue("misc", "ui_state", {type: "n/a"});
         Timers.CreateTimer(() => hero?.SetUnitCanRespawn(false));
         this.NextTurn();
@@ -1725,7 +1729,7 @@ export class GameMode {
         } else if (tile.id === "gotojail") {
             this.GotoJail();
         } else {
-            this.playerState.SetValue(tostring(current.pID), current);
+            this.SavePlayer(current);
             CustomNetTables.SetTableValue("misc", "current_turn", {type: "endturn", pID: current.pID, rolls: current.turnState.rolls});
         }
     }
@@ -1876,6 +1880,10 @@ export class GameMode {
         let savedTurn: TurnState = { pID: nextPlayer.pID, rolls: [], type: "transition"};
         DeepPrintTable(savedTurn);
         CustomNetTables.SetTableValue("misc", "current_turn", savedTurn);
+        stats?.SetGameInfo({
+            propertyOwnership: this.propertyOwnership.GetAllValues(),
+            playerState: this.playerState.GetAllValues()
+        });
         this.StartTurn();
     }
 
